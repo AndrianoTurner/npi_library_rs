@@ -1,7 +1,5 @@
 use serde::{Serialize,Deserialize};
 use diesel::{Queryable,Insertable,AsChangeset};
-
-use crate::schema::user_table::password;
 #[derive(Deserialize,Serialize,Debug,Queryable)]
 pub struct User{
     pub id : i32,
