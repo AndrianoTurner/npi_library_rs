@@ -1,21 +1,13 @@
 use actix_web::{ResponseError, HttpResponse};
 use serde::{Serialize,Deserialize};
 
-
-
 #[derive(Deserialize,Serialize,Debug)]
-pub struct LoginInfo{
+pub struct LoginRequest{
     pub email : String,
     pub password : String,
 }
 #[derive(Deserialize,Serialize,Debug)]
-pub struct Claims{
-    pub sub : String,
-    pub exp : usize,
-
-}
-#[derive(Deserialize,Serialize,Debug)]
-pub struct Register{
+pub struct RegisterRequest{
     pub email : String,
     pub password : String,
 }
@@ -42,7 +34,7 @@ pub trait ValidateForm{
 }
 
 
-impl ValidateForm for Register{
+impl ValidateForm for RegisterRequest{
     fn validate(&self) -> Result<(),ValidationError> {
         if self.email.trim().len().eq(&0) || self.password.trim().len().eq(&0){
             return Err(ValidationError)
@@ -51,7 +43,7 @@ impl ValidateForm for Register{
     }
 }
 
-impl ValidateForm for LoginInfo{
+impl ValidateForm for LoginRequest{
     fn validate(&self) -> Result<(),ValidationError> {
         if self.email.trim().len().eq(&0) || self.password.trim().len().eq(&0){
             return Err(ValidationError)

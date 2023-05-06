@@ -5,17 +5,26 @@ use actix_web::{
     HttpResponse,
     get
 };
-use crate::models::user::ValidateForm;
-use crate::{models::user::{LoginInfo, Register}, State};
+use crate::auth::{AuthenticationToken, Response};
+use crate::{models::request::{LoginRequest,ValidateForm,RegisterRequest}, State};
 use crate::database::models::User;
+use crate::auth;
 #[post("/login")]
-async fn login(login_info : web::Json<LoginInfo>, state: web::Data<State>) -> actix_web::Result<HttpResponse>{
+async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) -> actix_web::Result<HttpResponse>{
+    #[derive(serde::Serialize,serde::Deserialize)]
+    struct Response{
+        id : i32,
+        email : String,
+        token : String,
+    }
+
     let login_info = login_info.into_inner();
     login_info.validate()?;
     match state.database.get_user_by_email(&login_info.email).await{
         Some(user) => {
             if user.check_password(&login_info.password){
-                Ok(HttpResponse::Ok().json(user))
+                let token = auth::encode_token(user.id).await;
+                Ok(HttpResponse::Ok().json(Response {id : user.id, email : user.email,token}))
             }
             else{
                 
@@ -31,12 +40,12 @@ async fn login(login_info : web::Json<LoginInfo>, state: web::Data<State>) -> ac
 }
 
 #[post("/register")]
-
-async fn register(register : web::Json<Register>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
+async fn register(register : web::Json<RegisterRequest>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
     let reg = register.into_inner();
     reg.validate()?;
+    //                НУЖНО СДЕЛАТЬ БЛОКИРОВАНИЕ ПОТОКА, ЧТОБЫ НЕ ЛОМАТЬ АСИНХРОННОСТЬ!
     if let Some(_) = state.database.get_user_by_email(&reg.email).await{
-        return Ok(HttpResponse::InternalServerError().json("Email is registered!"))
+        return Ok(HttpResponse::InternalServerError().json("Email is regestered!"))
     }
     let user = state.database.create_user(&reg.email,&reg.password).await;
     match user {
@@ -62,4 +71,11 @@ pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(login);
     cfg.service(register);
     cfg.service(delete);
+    cfg.service(protected);
+}
+
+#[get("/protected")]
+async fn protected(token : AuthenticationToken) -> HttpResponse{
+    log::debug!("{:?}",token);
+    HttpResponse::Ok().json(Response{message : "Gotcha!".to_owned()})
 }
