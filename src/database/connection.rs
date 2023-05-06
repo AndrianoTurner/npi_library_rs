@@ -1,59 +1,100 @@
 use chrono::prelude::*;
-use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
-use dotenv::dotenv;
-use diesel::result;
-use super::models::{self, User,NewUser};
-use crate::schema::user_table::dsl::*;
-
-pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+use dotenvy::dotenv;
+use super::models::{User, hash_password};
+use sqlx::postgres::{PgPoolOptions,PgPool};
+use sqlx::Result;
 
 #[derive(Clone)]
 pub struct Database{
-    pool : DbPool,
+    pool : PgPool,
 }
 
-
-
-type Result<T> = std::result::Result<T,diesel::result::Error>;
-
 impl Database{
-    pub fn new() -> Self{
+    pub async fn new() -> Self{
         dotenv().ok();
         let database_url = std::env::var("DATABASE_URL").expect("Database URL is not set!");
-        let manager = ConnectionManager::<PgConnection>::new(database_url);
-        let pool : DbPool = r2d2::Pool::builder()
-            .build(manager)
-            .expect("Failed to build pool!");
+        let pool = PgPoolOptions::new()
+            .max_connections(10)
+            .connect(&database_url)
+            .await.expect("Failed to connect to db!");
         Database { pool }
     }
 
-    pub fn get_all_users(&self) -> Vec<User>{
-        let conn: &mut PgConnection = &mut self.pool.get().unwrap();
-        user_table.load::<User>(conn)
-        .expect("Failed to load users from pool!")
+    pub async fn get_all_users(&self) -> Vec<User>{
+        let query = "SELECT * FROM user_table";
+        sqlx::query_as( query)
+        .fetch_all(&self.pool)
+        .await.unwrap()
     }
 
-    pub fn create_user(&self, user : NewUser) -> Result<User>{
-        let conn: &mut PgConnection = &mut self.pool.get().unwrap();
-        diesel::insert_into(user_table)
-            .values(&user)
-            .get_result::<User>(conn)
+    pub async fn create_user(&self, email : &str, password : &str) -> Result<()>{
+        let query = "INSERT INTO user_table (email,password) VALUES ($1,$2)";
+        let password = hash_password(&password);
+        sqlx::query(query)
+            .bind(&email)
+            .bind(&password)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
-    pub fn get_user_by_id(&self, user_id : i32) -> Option<User>{
-        let conn: &mut PgConnection = &mut self.pool.get().unwrap();
-        user_table.find(user_id).get_result::<User>(conn).ok()
+    pub async fn get_user_by_id(&self, user_id : i32) -> Option<User>{
+        let query = "SELECT * FROM user_table WHERE id = $1";
+        sqlx::query_as(query)
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await
+            .ok()
     }
 
-    pub fn get_user_by_email(&self, other_email : String) -> Option<User>{
-        let conn: &mut PgConnection = &mut self.pool.get().unwrap();
-        user_table.filter(email.eq(other_email)).get_result(conn).ok()
+    pub async fn get_user_by_email(&self, email : &str) -> Option<User>{
+        let query = "SELECT * FROM user_table WHERE email = $1";
+        sqlx::query_as(query)
+            .bind(email)
+            .fetch_one(&self.pool)
+            .await
+            .ok()
     }
 
-    pub fn delete_user_id(&self, user_id : i32 , user : NewUser ) -> Option<User>{
-        let conn: &mut PgConnection = &mut self.pool.get().unwrap();
-        diesel::update(user_table.find(user_id)).set(&user)
-            .get_result::<User>(conn).ok()
+    pub async fn delete_user_id(&self, user_id : i32) -> Result<()>{
+        let query = "DELETE FROM user_table where id = $1";
+        sqlx::query(query)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        // TODO error check
+        Ok(())
+    }
+
+    pub async fn update_user(&self, user_id : i32, email : &str, password : &str) -> Result<()>{
+        let query = "UPDATE user_table SET email = $1, password = $2 WHERE id = $3";
+        sqlx::query(query)
+            .bind(email)
+            .bind(password)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    
+    }
+
+    pub async fn update_user_email(&self, user_id : i32, email : &str) -> Result<()>{
+        let query = "UPDATE user_table SET email = $1 WHERE id = $2";
+        sqlx::query(query)
+            .bind(email)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_user_password(&self,user_id : i32, password : &str) -> Result<()>{
+        let query = "UPDATE user_table SET password = $1 WHERE id = $2";
+        sqlx::query(query)
+            .bind(password)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 }

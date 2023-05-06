@@ -1,1 +1,0 @@
-curl -d '{"email":"aboba@mail.ru","password":"1234"}' -H 'Content-Type: application/json'  http://localhost:8080/api/register
