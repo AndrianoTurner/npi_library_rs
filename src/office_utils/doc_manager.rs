@@ -80,9 +80,9 @@ impl DocumentManager{
         DOCUMENT_SERVER_URL.to_owned()
     }
 
-    pub fn get_file_uri(&self,filename : &str)-> String{
+    pub fn get_file_uri(&self,filename : &str, user_id : i32)-> String{
         let host = self.get_server_url();
-        format!("{}{}/{}",host,config::STATIC_URL,filename)
+        format!("{}{}/{}/{}",host,config::STATIC_URL,user_id,filename)
     }
 
 
@@ -126,6 +126,28 @@ impl DocumentManager{
         ).await.unwrap();
         self.create_file(&mut asset_file, &path, true).await;
         Ok(filename)
+    }
+
+    pub async fn remove_file(&self,filename : &str, user_id : i32){
+        let path = self.get_storage_path(filename, user_id).await;
+        let path = std::path::Path::new(&path);
+        if path.exists(){
+            // По идее должно быть безопасно, т.к путь точно существует
+            // хотя может зафейлить во время конкретно удаления
+            tokio::fs::remove_file(path).await.unwrap();
+        }
+        todo!()
+    }
+
+    pub async fn generate_file_key(&self,filename : &str, user_id : i32) -> String{
+        let path = self.get_storage_path(filename, user_id).await;
+        let uri = self.get_file_uri(filename,user_id);
+        let file = tokio::fs::File::open(path).await.unwrap();
+        let metadata = file.metadata().await.unwrap();
+        let last_mofif : u64 = metadata.modified().unwrap().elapsed().unwrap().as_secs();
+        let input = format!("{}_{}",uri,last_mofif);
+        let hash = xxhash_rust::xxh64::xxh64(input.as_bytes(), 1).to_string();
+        hash[..20].to_string()
     }
 }
 
