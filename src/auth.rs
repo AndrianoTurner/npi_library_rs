@@ -11,7 +11,6 @@ use jsonwebtoken::{
     Algorithm::HS256, TokenData
 };
 use std::future::{Ready, ready};
-const BEARER : &str = "Aboba";
 const JWT_SECRET : &[u8] = b"MY_super_SEcret_sicret";
 #[derive(Deserialize,Serialize,Debug)]
 pub struct Claims{
@@ -38,7 +37,7 @@ pub struct DecodeResponse{
 }
 
 pub async fn encode_token(user_id : i32) -> String{
-    let exp : usize = Utc::now().checked_add_signed(Duration::minutes(1)).unwrap().timestamp() as usize;
+    let exp : usize = Utc::now().checked_add_signed(Duration::minutes(3)).unwrap().timestamp() as usize;
     let claims = Claims{
         sub : user_id,
         exp : exp,
