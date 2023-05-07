@@ -10,10 +10,9 @@ use actix_multipart::{
 use serde::{Serialize, Deserialize};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use crate::{auth::AuthenticationToken, State, office_utils::doc_manager::DocumentManager};
+use crate::{auth::AuthenticationToken, State};
 use futures_util::TryStreamExt;
 #[post("/upload")]
-
 pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : AuthenticationToken, req: HttpRequest ) -> HttpResponse{
     let max_file_size = 10_000;
     let max_file_count = 1;
@@ -25,7 +24,6 @@ pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : Aut
     if content_length.eq(&0) || content_length > max_file_size {
         return HttpResponse::BadRequest().into();
     }
-
     let mut current_count = 0;
     // Unwrap должен быть безопасен, т.к. проверка на валидность токена проведена
     let user = state.database.get_user_by_id(auth.id).await.unwrap();

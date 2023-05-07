@@ -5,11 +5,18 @@ use sqlx::postgres::{PgPoolOptions,PgPool};
 use sqlx::Result;
 
 #[derive(Clone)]
+
+/// Структура, содержащая функции для взаимодействия с БД
 pub struct Database{
     pool : PgPool,
 }
 
 impl Database{
+    /// Конструктор структуры БД
+    /// 
+    /// 
+    /// 
+    /// Может **паниковать**, если не удалось соединиться с БД.
     pub async fn new() -> Self{
         dotenv().ok();
         let database_url = std::env::var("DATABASE_URL").expect("Database URL is not set!");
@@ -22,15 +29,24 @@ impl Database{
         Database { pool }
     }
 
+    /// Функция возвращающая всех пользователей
+    /// 
+    /// 
+    /// На данный момент может **паниковать**
     pub async fn get_all_users(&self) -> Vec<User>{
         let query = "SELECT * FROM user_table";
         sqlx::query_as( query)
         .fetch_all(&self.pool)
         .await.unwrap()
     }
-
+    
+    /// Функция, создающая пользователя
+    /// 
     pub async fn create_user(&self, email : &str, password : &str) -> Result<()>{
         let query = "INSERT INTO user_table (email,password) VALUES ($1,$2)";
+
+
+        // TODO Блокировать поток, т.к. функция блокирующая
         let password = hash_password(&password);
         sqlx::query(query)
             .bind(&email)
@@ -64,7 +80,6 @@ impl Database{
             .bind(user_id)
             .execute(&self.pool)
             .await?;
-        // TODO error check
         Ok(())
     }
 

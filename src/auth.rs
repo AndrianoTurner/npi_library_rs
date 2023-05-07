@@ -11,12 +11,14 @@ use jsonwebtoken::{
     Algorithm::HS256, TokenData
 };
 use std::future::{Ready, ready};
+
 const JWT_SECRET : &[u8] = b"MY_super_SEcret_sicret";
 #[derive(Deserialize,Serialize,Debug)]
 pub struct Claims{
     pub sub : i32,
     pub exp : usize,
 }
+
 #[derive(Serialize,Deserialize,Debug)]
 pub struct EncodeResponse{
     pub message : String,
@@ -30,12 +32,17 @@ pub struct Response{
 pub struct DecodeBody{
     token : String,
 }
-#[derive(Serialize,Deserialize,Debug)]
-pub struct DecodeResponse{
-    message : String,
-    id : i32
-}
 
+/// Создает новый JWT Auth Токен
+///
+/// 
+///
+/// # Пример
+///
+/// ```
+/// let user_id = 10;
+/// let token = encode_token(user_id);
+/// ```
 pub async fn encode_token(user_id : i32) -> String{
     let exp : usize = Utc::now().checked_add_signed(Duration::minutes(3)).unwrap().timestamp() as usize;
     let claims = Claims{
@@ -48,7 +55,7 @@ pub async fn encode_token(user_id : i32) -> String{
     token
 }
 
-
+/// Расшифровывает JWT Токен
 pub async fn decode_token(body : Json<DecodeBody>) -> Result<i32,String>{
     let decoded_token = decode::<Claims>(
         &body.token,
@@ -63,6 +70,7 @@ pub async fn decode_token(body : Json<DecodeBody>) -> Result<i32,String>{
 
 }
 
+/// Структура, хранящая в себе произвольные данные из Auth Токена
 #[derive(Serialize,Deserialize,Debug)]
 pub struct AuthenticationToken{
     pub id : i32,

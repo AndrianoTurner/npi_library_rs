@@ -1,17 +1,17 @@
 use std::{collections::HashMap, fmt::format};
 use futures_util::StreamExt;
-
-use super::file_utils;
+use std::path::Path;
+use super::file_utils::{self, PathParseError};
 use crate::config;
-const DOC_SERV_FILLFORMS : [&str;2] = [".oform", ".docx"];
-const DOC_SERV_VIEWED : [&str;4] = [".pdf", ".djvu", ".xps", ".oxps"] ; //# file extensions that can be viewed
-const DOC_SERV_EDITED  : [&str;6]= [".docx", ".xlsx", ".csv", ".pptx", ".txt", ".docxf"];  //# file extensions that can be edited
+const DOC_SERV_FILLFORMS : [&str;2] = ["oform", "docx"];
+const DOC_SERV_VIEWED : [&str;4] = ["pdf", "djvu", "xps", "oxps"] ; //# file extensions that can be viewed
+const DOC_SERV_EDITED  : [&str;6]= ["docx", "xlsx", "csv", "pptx", "txt", "docxf"];  //# file extensions that can be edited
 const DOC_SERV_CONVERT : [&str;35] = [                                           //# file extensions that can be converted
-    ".docm", ".doc", ".dotx", ".dotm", ".dot", ".odt",
-    ".fodt", ".ott", ".xlsm", ".xlsb", ".xls", ".xltx", ".xltm",
-    ".xlt", ".ods", ".fods", ".ots", ".pptm", ".ppt",
-    ".ppsx", ".ppsm", ".pps", ".potx", ".potm", ".pot",
-    ".odp", ".fodp", ".otp", ".rtf", ".mht", ".html", ".htm", ".xml", ".epub", ".fb2"
+    "docm", "doc", "dotx", "dotm", "dot", "odt",
+    "fodt", "ott", "xlsm", "xlsb", "xls", "xltx", "xltm",
+    "xlt", "ods", "fods", "ots", "pptm", "ppt",
+    "ppsx", "ppsm", "pps", "potx", "potm", "pot",
+    "odp", "fodp", "otp", "rtf", "mht", "html", "htm", "xml", "epub", "fb2"
 ];
 const DOCUMENT_SERVER_URL : &str = "http://localhost:8000/";
 const ROOT_FOLDER : &str = "app_data/";
@@ -43,13 +43,13 @@ impl DocumentManager{
 
     pub fn get_internal_extension(&self,file_type : &str) -> String{
         let mapping = HashMap::from([
-            ("word",".docx"),
-            ("cell",".xlsx"),
-            ("slide",".pptx"),
-            ("docxf",".docxf")
+            ("word","docx"),
+            ("cell","xlsx"),
+            ("slide","pptx"),
+            ("docxf","docxf")
         ]);
 
-        mapping.get(file_type).map_or(".docx".to_owned(), |f| f.to_string())
+        mapping.get(file_type).map_or("docx".to_owned(), |f| f.to_string())
     }
 
     pub fn get_template_image_url(&self,filetype : &str) -> String{
@@ -62,9 +62,9 @@ impl DocumentManager{
         mapping.get(filetype).map_or("file_docx.svg".to_string(), |f| f.to_string())
     }
 
-    pub fn get_correct_name(&self,filename : &str) -> String{
-        let basename = file_utils::get_file_name_no_ext(filename);
-        let ext = file_utils::get_file_ext(filename);
+    pub fn get_correct_name(&self,filename : &str) -> Result<String,PathParseError>{ 
+        let basename = file_utils::get_file_name_no_ext(filename)?;
+        let ext = file_utils::get_file_ext(filename)?;
 
         let mut name = format!("{basename}{ext}");
         let mut i = 1;
@@ -73,7 +73,7 @@ impl DocumentManager{
             name = format!("{basename}({i}){ext}");
             i +=1;
         }
-        name
+        Ok(name)
     }
 
     pub fn get_server_url(&self) -> String{
@@ -113,18 +113,18 @@ impl DocumentManager{
     }
 
     // TODO IMPLEMENT PROPER PATH CHECKS!!!!
-    pub async fn create_sample(&self,filetype : &str, is_sample : bool, user_id : i32) -> String{
+    pub async fn create_sample(&self,filetype : &str, is_sample : bool, user_id : i32) -> Result<String,PathParseError>{
         let ext = self.get_internal_extension(filetype);
         let mut sample_name = String::from("new");
         if is_sample{
             sample_name = "sample".to_string();
         }
-        let filename = self.get_correct_name(&format!("{sample_name}{ext}"));
+        let filename = self.get_correct_name(&format!("{sample_name}{ext}"))?;
         let path = self.get_storage_path(&filename,user_id).await;
         let mut asset_file = tokio::fs::File::open(
             format!("assets/{}/{}",sample_name,filename)
         ).await.unwrap();
         self.create_file(&mut asset_file, &path, true).await;
-        return filename;
+        Ok(filename)
     }
 }

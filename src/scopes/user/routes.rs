@@ -43,14 +43,13 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
 async fn register(register : web::Json<RegisterRequest>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
     let reg = register.into_inner();
     reg.validate()?;
-    //                НУЖНО СДЕЛАТЬ БЛОКИРОВАНИЕ ПОТОКА, ЧТОБЫ НЕ ЛОМАТЬ АСИНХРОННОСТЬ!
     if let Some(_) = state.database.get_user_by_email(&reg.email).await{
         return Ok(HttpResponse::InternalServerError().json("Email is regestered!"))
     }
     let user = state.database.create_user(&reg.email,&reg.password).await;
     match user {
         Ok(()) => Ok(HttpResponse::Ok().json("Successfully registered!")),
-        Err(e) => Ok(HttpResponse::InternalServerError().json(e.to_string())),
+        Err(e) => Ok(HttpResponse::InternalServerError().json("RegistrationError")),
     }
     
 }
