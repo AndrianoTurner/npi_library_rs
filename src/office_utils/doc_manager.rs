@@ -128,3 +128,27 @@ impl DocumentManager{
         Ok(filename)
     }
 }
+
+#[cfg(test)]
+
+mod tests{
+    use super::DocumentManager;
+
+    #[test]
+    fn test_is_can(){
+        let dm = DocumentManager::new();
+        let good_convert = "docm";
+        let good = "docx";
+        let wrong = "idk";
+        assert_eq!(dm.is_can_convert(good_convert),true);
+        assert_eq!(dm.is_can_convert(wrong),false);
+        assert_eq!(dm.is_can_edit(good),true);
+        assert_eq!(dm.is_can_edit(wrong),false);
+        assert_eq!(dm.is_can_fill_forms(good),true);
+        assert_eq!(dm.is_can_fill_forms(wrong),false);
+        assert_eq!(dm.is_can_view("pdf"),true);
+        assert_eq!(dm.is_can_view(wrong),false);
+        assert_eq!(dm.is_supported_extension(good),true);
+        assert_eq!(dm.is_supported_extension(wrong),false);
+    }
+}
