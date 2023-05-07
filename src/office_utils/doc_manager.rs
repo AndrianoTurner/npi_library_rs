@@ -86,11 +86,16 @@ impl DocumentManager{
     }
 
 
-    pub fn get_storage_path(&self,filename : &str,user_id : i32) -> String{
+    pub async fn get_storage_path(&self,filename : &str,user_id : i32) -> String{
+        let user_folder = format!("{}{}",ROOT_FOLDER,user_id);
+        log::debug!("Folder {}", user_folder);
+        match std::path::Path::new(&user_folder).exists() {
+            true => (),
+            false => tokio::fs::create_dir(&user_folder).await.unwrap(),
+        }
         let destination = format!(
-            "{}{}/{}",
-            ROOT_FOLDER,
-            user_id,
+            "{}/{}",
+            user_folder,
             filename
         );
         destination
@@ -105,7 +110,6 @@ impl DocumentManager{
             out.write(&buf).await.unwrap();
             read = stream.read_buf(&mut buf).await.unwrap();
         }
-
     }
 
     // TODO IMPLEMENT PROPER PATH CHECKS!!!!
@@ -116,7 +120,7 @@ impl DocumentManager{
             sample_name = "sample".to_string();
         }
         let filename = self.get_correct_name(&format!("{sample_name}{ext}"));
-        let path = self.get_storage_path(&filename,user_id);
+        let path = self.get_storage_path(&filename,user_id).await;
         let mut asset_file = tokio::fs::File::open(
             format!("assets/{}/{}",sample_name,filename)
         ).await.unwrap();

@@ -16,7 +16,9 @@ impl Database{
         let pool = PgPoolOptions::new()
             .max_connections(10)
             .connect(&database_url)
-            .await.expect("Failed to connect to db!");
+            .await.expect("Failed to connect to db!"); 
+            // Expect уместен, т.к. если бд не запущена то и 
+            // приложение работать не должно
         Database { pool }
     }
 

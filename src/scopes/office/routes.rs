@@ -38,7 +38,7 @@ pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : Aut
             let destination = state.document_manager.get_storage_path(
                 &field.content_disposition().get_filename().unwrap(), 
                 user.id
-            );
+            ).await;
 
             let mut saved_file = fs::File::create(&destination).await.unwrap();
             while let Ok(Some(chunk)) = field.try_next().await{

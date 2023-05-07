@@ -4,7 +4,7 @@ pub fn get_file_name(filename : &str) -> String{
 
     filename[index..].to_string()
 }
-// TODO CHECK IF CORRECT
+// Функции были взяты из питоновского примера, их надо проверить
 pub fn get_file_name_no_ext(filename : &str) -> String{
     let filename = get_file_name(filename);
     let index = filename.rfind(".").unwrap_or(0);
