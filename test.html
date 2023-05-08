@@ -1,0 +1,33 @@
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class = editors>
+        <div id="placeholder"></div>
+    </div>
+    <script type="text/javascript" src="http://localhost:8000/web-apps/apps/api/documents/api.js"></script>
+    <script>
+        var config = {
+        "height": "100%",
+        "type": "desktop",
+        "width": "100%",
+        "document": {
+            "fileType": "docx",
+            "key": "Khirz6zTPdfd7",
+            "title": "Example Document Title.docx",
+            "url": "http://localhost:8080/api/office/file/test.docx"
+        },
+        "documentType": "word",
+        "editorConfig": {
+            "callbackUrl": "http://localhost:8080/api/office/track"
+        }
+    };
+    var docEditor = new DocsAPI.DocEditor("placeholder",config);
+    </script>
+
+
+</body>
+

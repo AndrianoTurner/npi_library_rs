@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt::format};
 use futures_util::StreamExt;
+use tokio::io::{AsyncRead, AsyncReadExt};
 use std::path::Path;
 use super::file_utils::{self, PathParseError};
 use crate::config::{
@@ -102,15 +103,16 @@ impl DocumentManager{
         destination
     }
 
-    pub async fn create_file(&self,stream : &mut tokio::fs::File,path : &str, meta : bool) {
+    pub async fn create_file<T>(&self,stream : &mut T,path : &str, meta : bool)
+        where 
+        T : std::marker::Unpin  + AsyncRead + AsyncReadExt
+    {
         use tokio::fs::File;
         use tokio::io::{AsyncWriteExt,AsyncReadExt};
-        let mut buf = bytes::BytesMut::with_capacity(8192);
-        let mut read = stream.read_buf(&mut buf).await.unwrap();
         let mut out = File::create(path).await.unwrap();
-        while read > 0 {
-            out.write(&buf).await.unwrap();
-            read = stream.read_buf(&mut buf).await.unwrap();
+        let mut buf  = [0u8;8192];
+        while let Ok(b) = stream.read(&mut buf).await {
+            out.write_all(&buf);
         }
     }
 
@@ -138,7 +140,7 @@ impl DocumentManager{
             // хотя может зафейлить во время конкретно удаления
             tokio::fs::remove_file(path).await.unwrap();
         }
-        todo!()
+        
     }
 
     pub async fn generate_file_key(&self,filename : &str, user_id : i32) -> String{
@@ -157,6 +159,16 @@ impl DocumentManager{
         let script = reqwest::get(format!("{}{}",self.get_server_url(),DOC_SERV_API_URL)).await?;
         script.text().await
     }
+
+    pub async fn get_file_for_user(&self,filename : &str, user_id : i32) -> Result<Vec<u8>,PathParseError>{
+        let storage = &self.get_storage_path(filename, user_id).await;
+        let file = Path::new(&storage);
+
+        if !file.exists(){return Err(PathParseError)}
+
+        Ok(tokio::fs::read(file).await.map_err(|_| PathParseError).unwrap())
+    }
+
 }
 
 #[cfg(test)]
@@ -194,5 +206,10 @@ mod tests{
         let manager = DocumentManager::new();
         let js = manager.get_js_scripts().await.unwrap();  
         println!("{}",js);
+    }
+    #[tokio::test]
+    async fn test_remove_file(){
+        let documentmanager = DocumentManager::new();
+        documentmanager.remove_file("test.txt", 8).await;
     }
 }

@@ -7,7 +7,7 @@ services:
     environment:
       - POSTGRES_USER=library_user
       - POSTGRES_PASSWORD=12345678
-      - POSTGRS_DB=library
+      - POSTGRES_DB=library
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
 
@@ -18,7 +18,7 @@ services:
       - JWT_ENABLED=false
       - JWT_SECRET=my_jwt_secret
     expose:
-      - 80
+      - 8000
     ports:
       - 8000:80
     volumes:
@@ -26,3 +26,4 @@ services:
       - ./persist/OnlyOffice/Certs:/var/www/onlyoffice/Data #for certificates
       - ./persist/OnlyOffice/Cache:/var/lib/onlyoffice #for file cache
       - ./persist/OnlyOffice/Database:/var/lib/postgresql #for database
+    network_mode: host

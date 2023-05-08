@@ -1,4 +1,5 @@
 
+
 use actix_web::{
     get,
     post, HttpResponse,
@@ -8,10 +9,11 @@ use actix_multipart::{
     Multipart
 };
 use serde::{Serialize, Deserialize};
-use tokio::fs;
+use tokio::{fs, io::AsyncBufRead};
 use tokio::io::AsyncWriteExt;
 use crate::{auth::AuthenticationToken, State};
-use futures_util::TryStreamExt;
+use futures_util::{TryStreamExt, FutureExt, StreamExt};
+use crate::office_utils::models::{CallbackData};
 #[post("/upload")]
 pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : AuthenticationToken, req: HttpRequest ) -> HttpResponse{
     let max_file_size = 10_000;
@@ -63,14 +65,48 @@ pub async fn create_new(req : HttpRequest, state : web::Data<State>,create_file_
     HttpResponse::Created().into()
 }
 
-#[get("/load-js")]
+#[get("/load-api.js")]
 pub async fn load_js(state : web::Data<State>) -> HttpResponse{
     let js = state.document_manager.get_js_scripts().await.unwrap();
     HttpResponse::Ok().content_type(mime::APPLICATION_JAVASCRIPT_UTF_8).body(js)
 }
+#[post("/track")]
+pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> Result<HttpResponse, Box<dyn std::error::Error>>{
+    use futures_util::stream::{TryStreamExt};
+    use tokio_util::io::StreamReader;
+    let data = data.into_inner();
+    log::debug!("Status: {:?}",data);
+    #[derive(Serialize)]
+    struct Response{
+        error : i32,
+    }
+    if data.status == 2{
+        if data.url.is_some(){
+            let url = data.url.unwrap();
+            let resp = reqwest::get(&url).await?;
+            let filename = state.document_manager.get_correct_name(&url)?;
+            let path = state.document_manager.get_storage_path(&filename,8).await;
+            let stream = resp.bytes_stream()
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other,e));
+            let mut stream_reader = StreamReader::new(stream);
+            let _ = state.document_manager.create_file(&mut stream_reader, &path, false).await;
+            return Ok(HttpResponse::Ok().json(Response {error : 0}));
+        }
+    }
+    Ok(HttpResponse::Ok().json(Response {error : 0}))
+}
+
+#[get("/file/{filename}")]
+pub async fn get_file(state : web::Data<State>) -> HttpResponse{
+    let bytes = state.document_manager.get_file_for_user("test.docx", 8).await.unwrap();
+    HttpResponse::Ok().content_type("application/octet-stream").body(bytes)
+}
+
 
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
     cfg.service(load_js);
+    cfg.service(get_file);
+    cfg.service(track);
 }
