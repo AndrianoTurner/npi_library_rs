@@ -10,3 +10,19 @@ services:
       - POSTGRS_DB=library
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+
+  documentserver:
+    image: onlyoffice/documentserver:latest
+    restart: always
+    environment:
+      - JWT_ENABLED=false
+      - JWT_SECRET=my_jwt_secret
+    expose:
+      - 80
+    ports:
+      - 8000:80
+    volumes:
+      - ./persist/OnlyOffice/Logs:/var/log/onlyoffice #for ONLYOFFICE Docs logs
+      - ./persist/OnlyOffice/Certs:/var/www/onlyoffice/Data #for certificates
+      - ./persist/OnlyOffice/Cache:/var/lib/onlyoffice #for file cache
+      - ./persist/OnlyOffice/Database:/var/lib/postgresql #for database

@@ -2,7 +2,7 @@
 use actix_web::{
     get,
     post, HttpResponse,
-    web::{self, Payload, ServiceConfig}, HttpRequest, http::header::CONTENT_LENGTH,
+    web::{self, ServiceConfig}, HttpRequest, http::header::CONTENT_LENGTH,
 };
 use actix_multipart::{
     Multipart
@@ -63,7 +63,14 @@ pub async fn create_new(req : HttpRequest, state : web::Data<State>,create_file_
     HttpResponse::Created().into()
 }
 
+#[get("/load-js")]
+pub async fn load_js(state : web::Data<State>) -> HttpResponse{
+    let js = state.document_manager.get_js_scripts().await.unwrap();
+    HttpResponse::Ok().content_type(mime::APPLICATION_JAVASCRIPT_UTF_8).body(js)
+}
+
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
+    cfg.service(load_js);
 }

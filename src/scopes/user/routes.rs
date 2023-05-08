@@ -66,15 +66,15 @@ async fn delete(user_id : web::Path<i32>, state : web::Data<State>) -> actix_web
     }
 }
 
+#[get("/protected")]
+async fn protected(token : AuthenticationToken) -> HttpResponse{
+    log::debug!("{:?}",token);
+    HttpResponse::Ok().json(Response{message : "Gotcha!".to_owned()})
+}
+
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(login);
     cfg.service(register);
     cfg.service(delete);
     cfg.service(protected);
-}
-
-#[get("/protected")]
-async fn protected(token : AuthenticationToken) -> HttpResponse{
-    log::debug!("{:?}",token);
-    HttpResponse::Ok().json(Response{message : "Gotcha!".to_owned()})
 }

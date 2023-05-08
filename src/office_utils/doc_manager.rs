@@ -2,19 +2,20 @@ use std::{collections::HashMap, fmt::format};
 use futures_util::StreamExt;
 use std::path::Path;
 use super::file_utils::{self, PathParseError};
-use crate::config;
-const DOC_SERV_FILLFORMS : [&str;2] = ["oform", "docx"];
-const DOC_SERV_VIEWED : [&str;4] = ["pdf", "djvu", "xps", "oxps"] ; //# file extensions that can be viewed
-const DOC_SERV_EDITED  : [&str;6]= ["docx", "xlsx", "csv", "pptx", "txt", "docxf"];  //# file extensions that can be edited
-const DOC_SERV_CONVERT : [&str;35] = [                                           //# file extensions that can be converted
-    "docm", "doc", "dotx", "dotm", "dot", "odt",
-    "fodt", "ott", "xlsm", "xlsb", "xls", "xltx", "xltm",
-    "xlt", "ods", "fods", "ots", "pptm", "ppt",
-    "ppsx", "ppsm", "pps", "potx", "potm", "pot",
-    "odp", "fodp", "otp", "rtf", "mht", "html", "htm", "xml", "epub", "fb2"
-];
-const DOCUMENT_SERVER_URL : &str = "http://localhost:8000/";
-const ROOT_FOLDER : &str = "app_data/";
+use crate::config::{
+    EXT_DOCUMENT,
+    EXT_PRESENTATION,
+    EXT_SPREADSHEET,
+    DOC_SERV_VIEWED,
+    DOC_SERV_EDITED,
+    DOC_SERV_CONVERT,
+    DOC_SERV_FILLFORMS,
+    DOCUMENT_SERVER_URL,
+    STATIC_URL,
+    ROOT_FOLDER,
+    DOC_SERV_API_URL
+};
+
 pub struct DocumentManager;
 
 impl DocumentManager{
@@ -82,7 +83,7 @@ impl DocumentManager{
 
     pub fn get_file_uri(&self,filename : &str, user_id : i32)-> String{
         let host = self.get_server_url();
-        format!("{}{}/{}/{}",host,config::STATIC_URL,user_id,filename)
+        format!("{}{}/{}/{}",host,STATIC_URL,user_id,filename)
     }
 
 
@@ -100,6 +101,7 @@ impl DocumentManager{
         );
         destination
     }
+
     pub async fn create_file(&self,stream : &mut tokio::fs::File,path : &str, meta : bool) {
         use tokio::fs::File;
         use tokio::io::{AsyncWriteExt,AsyncReadExt};
@@ -144,10 +146,16 @@ impl DocumentManager{
         let uri = self.get_file_uri(filename,user_id);
         let file = tokio::fs::File::open(path).await.unwrap();
         let metadata = file.metadata().await.unwrap();
-        let last_mofif : u64 = metadata.modified().unwrap().elapsed().unwrap().as_secs();
+        let last_mofif : u64 = metadata.modified().unwrap().duration_since(metadata.created().unwrap()).unwrap().as_secs();
         let input = format!("{}_{}",uri,last_mofif);
         let hash = xxhash_rust::xxh64::xxh64(input.as_bytes(), 1).to_string();
-        hash[..20].to_string()
+        hash[..19].to_string()
+    }
+
+    pub async fn get_js_scripts(&self) -> Result<String,reqwest::Error>{
+        use reqwest;
+        let script = reqwest::get(format!("{}{}",self.get_server_url(),DOC_SERV_API_URL)).await?;
+        script.text().await
     }
 }
 
@@ -172,5 +180,19 @@ mod tests{
         assert_eq!(dm.is_can_view(wrong),false);
         assert_eq!(dm.is_supported_extension(good),true);
         assert_eq!(dm.is_supported_extension(wrong),false);
+    }
+
+    #[tokio::test]
+    async fn test_generate_file_key() {
+        let manager = DocumentManager::new();
+        let key1 = manager.generate_file_key("test.txt", 8).await;
+        let key2 = manager.generate_file_key("test.txt", 8).await;
+        assert_eq!(key1,key2);
+    }
+    #[tokio::test]
+    async fn test_get_js(){
+        let manager = DocumentManager::new();
+        let js = manager.get_js_scripts().await.unwrap();  
+        println!("{}",js);
     }
 }
