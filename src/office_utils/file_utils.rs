@@ -14,7 +14,6 @@ impl std::fmt::Display for PathParseError{
         write!(f," couldn't parse the filename")
     }
 }
-
 /// Возвращает имя файла с расширением
 /// 
 /// # Пример:

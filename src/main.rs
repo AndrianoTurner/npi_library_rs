@@ -7,11 +7,9 @@ mod models;
 mod auth;
 mod office_utils;
 use database::connection::Database;
-use office_utils::doc_manager::DocumentManager;
 mod config;
 pub struct State{
     database : Database,
-    document_manager : DocumentManager,
 }
 
 #[actix_web::main]
@@ -22,7 +20,7 @@ async fn main() -> std::io::Result<()>{
     let database = Database::new().await;
     HttpServer::new(move ||{
         App::new()
-            .app_data(web::Data::new(State{database : database.clone(), document_manager : DocumentManager::new()}))
+            .app_data(web::Data::new(State{database : database.clone()}))
             .wrap(middleware::Logger::default())
             .service(web::scope("/api")
                 .service(web::scope("/user").configure(scopes::user::routes::build_routes))

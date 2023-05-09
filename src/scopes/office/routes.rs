@@ -14,6 +14,7 @@ use tokio::io::AsyncWriteExt;
 use crate::{auth::AuthenticationToken, State};
 use futures_util::{TryStreamExt, FutureExt, StreamExt};
 use crate::office_utils::models::{CallbackData};
+use crate::office_utils::doc_manager::*;
 #[post("/upload")]
 pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : AuthenticationToken, req: HttpRequest ) -> HttpResponse{
     let max_file_size = 10_000;
@@ -35,7 +36,7 @@ pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : Aut
             let filetype = field.content_type();
 
             if filetype.is_none() {continue;};
-            let destination = state.document_manager.get_storage_path(
+            let destination = get_storage_path(
                 &field.content_disposition().get_filename().unwrap(), 
                 user.id
             ).await;
@@ -61,13 +62,13 @@ pub async fn create_new(req : HttpRequest, state : web::Data<State>,create_file_
     if info.file_type.is_empty() {return HttpResponse::BadRequest().json("Wrong filetype!");}
     let filetype = info.file_type;
     let sample = info.sample;
-    state.document_manager.create_sample(&filetype, sample, auth.id).await;
+    create_sample(&filetype, sample, auth.id).await;
     HttpResponse::Created().into()
 }
 
 #[get("/load-api.js")]
 pub async fn load_js(state : web::Data<State>) -> HttpResponse{
-    let js = state.document_manager.get_js_scripts().await.unwrap();
+    let js = get_js_scripts().await.unwrap();
     HttpResponse::Ok().content_type(mime::APPLICATION_JAVASCRIPT_UTF_8).body(js)
 }
 #[post("/track")]
@@ -76,20 +77,31 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
     use tokio_util::io::StreamReader;
     let data = data.into_inner();
     log::debug!("Status: {:?}",data);
+
     #[derive(Serialize)]
     struct Response{
         error : i32,
+    }
+    if data.status == 1{
+        match data.actions{
+            Some(actions) =>{
+                if actions[0]._type == 0{
+                    let user = &actions[0].userid;
+                }
+            },
+            None => () ,
+        }
     }
     if data.status == 2{
         if data.url.is_some(){
             let url = data.url.unwrap();
             let resp = reqwest::get(&url).await?;
-            let filename = state.document_manager.get_correct_name(&url)?;
-            let path = state.document_manager.get_storage_path(&filename,8).await;
+            let filename = get_correct_name(&url)?;
+            let path = get_storage_path(&filename,8).await;
             let stream = resp.bytes_stream()
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other,e));
             let mut stream_reader = StreamReader::new(stream);
-            let _ = state.document_manager.create_file(&mut stream_reader, &path, false).await;
+            let _ = create_file(&mut stream_reader, &path, false).await;
             return Ok(HttpResponse::Ok().json(Response {error : 0}));
         }
     }
@@ -98,7 +110,7 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
 
 #[get("/file/{filename}")]
 pub async fn get_file(state : web::Data<State>) -> HttpResponse{
-    let bytes = state.document_manager.get_file_for_user("test.docx", 8).await.unwrap();
+    let bytes = get_file_for_user("test.docx", 8).await.unwrap();
     HttpResponse::Ok().content_type("application/octet-stream").body(bytes)
 }
 
