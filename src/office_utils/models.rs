@@ -60,7 +60,7 @@ pub struct Template{
 #[derive(Deserialize,Serialize,Debug)]
 pub struct DocumentUser{
     name : String,
-    group : String,
+   // group : String,
     id : String,
     lastname : String,
 }
@@ -69,7 +69,6 @@ impl From<User> for DocumentUser{
     fn from(value: User) -> Self {
         DocumentUser { 
             name: value.email, 
-            group: value.group.to_string(), 
             id: value.id.to_string(), 
             lastname: "".to_string() 
         }

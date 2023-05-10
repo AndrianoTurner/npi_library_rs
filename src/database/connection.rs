@@ -43,6 +43,7 @@ impl Database{
     /// Функция, создающая пользователя
     /// 
     pub async fn create_user(&self, email : &str, password : &str) -> Result<()>{
+        log::debug!("{} {}",email,password);
         let query = "INSERT INTO user_table (email,password) VALUES ($1,$2)";
 
 
@@ -65,13 +66,16 @@ impl Database{
             .ok()
     }
 
-    pub async fn get_user_by_email(&self, email : &str) -> Option<User>{
+    pub async fn get_user_by_email(&self, email : &str) -> Result<User>{
         let query = "SELECT * FROM user_table WHERE email = $1";
-        sqlx::query_as(query)
+        let a = sqlx::query_as(query)
             .bind(email)
             .fetch_one(&self.pool)
-            .await
-            .ok()
+            .await;
+
+        log::debug!("User {:?}",a);
+        a
+        
     }
 
     pub async fn delete_user_id(&self, user_id : i32) -> Result<()>{

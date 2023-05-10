@@ -32,11 +32,12 @@ async fn main() -> std::io::Result<()>{
         App::new()
             .app_data(web::Data::new(State{database : database.clone()}))
             .wrap(middleware::Logger::default())
+            .wrap(actix_cors::Cors::permissive())
             .service(web::scope("/api")
                 .service(web::scope("/user").configure(scopes::user::routes::build_routes))
                 .service(web::scope("/office").configure(scopes::office::routes::build_routes)))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }

@@ -6,6 +6,7 @@ use actix_web::{
     get
 };
 use crate::auth::{AuthenticationToken, Response};
+use crate::models::request::NormalizeForm;
 use crate::{models::request::{LoginRequest,ValidateForm,RegisterRequest}, State};
 use crate::database::models::User;
 use crate::auth;
@@ -21,7 +22,8 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
     let login_info = login_info.into_inner();
     login_info.validate()?;
     match state.database.get_user_by_email(&login_info.email).await{
-        Some(user) => {
+        
+        Ok(user) => {
             if user.check_password(&login_info.password){
                 let token = auth::encode_token(user.id).await;
                 Ok(HttpResponse::Ok().json(Response {id : user.id, email : user.email,token}))
@@ -32,7 +34,7 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
             }
             
         },
-        None => { 
+        Err(_) => { 
             User::mock_user_password();
             Ok(HttpResponse::Ok().json("Wrong email or password!"))
         },
@@ -41,15 +43,16 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
 
 #[post("/register")]
 async fn register(register : web::Json<RegisterRequest>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
-    let reg = register.into_inner();
+    let reg = register.into_inner().normalize();
     reg.validate()?;
-    if state.database.get_user_by_email(&reg.email).await.is_some(){
-        return Ok(HttpResponse::InternalServerError().json("Email is regestered!"))
-    }
+    match state.database.get_user_by_email(&reg.email).await{
+        Ok(_) => return Ok(HttpResponse::BadRequest().json("Email is registered")),
+        _ => ()
+    };
     let user = state.database.create_user(&reg.email,&reg.password).await;
     match user {
         Ok(()) => Ok(HttpResponse::Ok().json("Successfully registered!")),
-        Err(_) => Ok(HttpResponse::InternalServerError().json("RegistrationError")),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(format!("Registration Error {}",e))),
     }
     
 }

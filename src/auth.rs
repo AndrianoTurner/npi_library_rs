@@ -44,7 +44,7 @@ pub struct DecodeBody{
 /// let token = encode_token(user_id);
 /// ```
 pub async fn encode_token(user_id : i32) -> String{
-    let exp : usize = Utc::now().checked_add_signed(Duration::minutes(3)).unwrap().timestamp() as usize;
+    let exp : usize = Utc::now().checked_add_signed(Duration::minutes(20)).unwrap().timestamp() as usize;
     let claims = Claims{
         sub : user_id,
         exp,
