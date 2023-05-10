@@ -1,5 +1,7 @@
 
 #![allow(non_snake_case,unused,dead_code)]
+
+use crate::database;
 pub fn get_history_dir(storage_path : &str) -> String{
     format!("{}-hist",storage_path)
 }
@@ -49,4 +51,19 @@ pub fn get_prev_file_path(ver_dir : &str, ext : &str) -> String{
 
 pub fn get_key_path(ver_dir : &str) -> String{
     format!("{}/key.txt",ver_dir)
+}
+
+pub fn get_meta_path(hist_dir : &str) -> String{
+    format!("{}/createdInfo.json",hist_dir)
+}
+
+pub async fn create_meta(storage_path : &str, user_id : i32){
+    let hist_dir = get_history_dir(storage_path);
+    let path = get_meta_path(&hist_dir);
+
+    let p = std::path::Path::new(&path);
+
+    if !p.exists(){
+        tokio::fs::create_dir(p).await.unwrap()
+    }
 }

@@ -1,28 +1,16 @@
 #![allow(non_snake_case,unused,dead_code)]
-use super::{file_utils::{self, PathParseError}, models::CallbackData};
+use super::{models::CallbackData,file_utils};
 
-#[derive(Debug)]
-pub struct ConverterError;
+use crate::error::Error;
 
-impl std::fmt::Display for ConverterError{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f," service_converter error")
-    }
-}
+type Result<T> = std::result::Result<T,Error>;
 
-impl std::error::Error for ConverterError{}
-
-impl From<PathParseError> for ConverterError {
-    fn from(value: PathParseError) -> Self {
-        Self{}
-    }
-}
 pub async fn get_converter_uri(
     doc_uri : &str,
     from_ext : &str,
     to_ext : &str,
     doc_key : &str,
-) -> Result<String,ConverterError>{
+) -> Result<String>{
     #[derive(serde::Serialize)]
     struct ConverterPayload{
         #[serde(rename = "async")]
@@ -54,19 +42,17 @@ pub async fn get_converter_uri(
         region : None,
     };
     let url_for_req = format!("{}{}",DOCUMENT_SERVER_URL,DOC_SERV_CONVERTER_URL);
-    let parsed = reqwest::Url::parse(&url_for_req).map_err(|_| ConverterError)?;
+    let parsed = reqwest::Url::parse(&url_for_req).map_err(|_| Error::ConverterError)?;
     let client = reqwest::Client::new();
     let resp = client.post(parsed)
         .json(&payload)
         .send()
-        .await
-        .map_err(|_| ConverterError)?
+        .await?
         .json::<ConverterResponse>()
-        .await
-        .map_err(|_| ConverterError)?;
+        .await?;
 
     if resp.error != 0{
-        return  Err(ConverterError);
+        return  Err(Error::ConverterError);
     }
     // Че тут делать ?
     Ok(resp.fileUrl.unwrap())

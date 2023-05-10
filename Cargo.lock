@@ -1195,6 +1195,7 @@ dependencies = [
  "reqwest",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tokio-util",
  "uuid",

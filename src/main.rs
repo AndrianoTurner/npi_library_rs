@@ -7,6 +7,7 @@ mod auth;
 mod office_utils;
 use database::connection::Database;
 mod config;
+mod error;
 pub struct State{
     database : Database,
 }

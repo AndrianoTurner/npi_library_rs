@@ -2,17 +2,8 @@
 use std::ffi::OsStr;
 
 use crate::config;
-
-#[derive(Debug,PartialEq)]
-pub struct PathParseError;
-
-impl std::error::Error for PathParseError{}
-
-impl std::fmt::Display for PathParseError{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f," couldn't parse the filename")
-    }
-}
+use crate::error::Error;
+type Result<T> = std::result::Result<T,Error>;
 /// Возвращает имя файла с расширением
 /// 
 /// # Пример:
@@ -20,13 +11,13 @@ impl std::fmt::Display for PathParseError{
 ///     let filename = "app_data/10/aboba.docx";
 ///     assert_eq!(get_file_name(filename).unwrap(),"aboba.docx".to_string());
 /// ```
-pub fn get_file_name(filename : &str) -> Result<String,PathParseError>{
+pub fn get_file_name(filename : &str) -> Result<String>{
     let res = std::path::Path::new(filename)
         .file_name()
         .unwrap_or(OsStr::new(""))
         .to_string_lossy().
         to_string();
-    if res.is_empty(){return Err(PathParseError);}
+    if res.is_empty(){return Err(Error::FileUtilsError);}
     Ok(res)
 }
 // Функции были взяты из питоновского примера, их надо проверить
@@ -38,13 +29,13 @@ pub fn get_file_name(filename : &str) -> Result<String,PathParseError>{
 ///     let filename = "app_data/10/aboba.docx";
 ///     assert_eq!(get_file_name(filename).unwrap(),"aboba".to_string());
 /// ```
-pub fn get_file_name_no_ext(filename : &str) -> Result<String,PathParseError>{
+pub fn get_file_name_no_ext(filename : &str) -> Result<String>{
     let res = std::path::Path::new(filename)
         .file_stem()
         .unwrap_or(OsStr::new(""))
         .to_string_lossy().
         to_string();
-    if res.is_empty(){return Err(PathParseError);}
+    if res.is_empty(){return Err(Error::FileUtilsError);}
     Ok(res)
 }
 /// Возвращает расширение файла
@@ -54,24 +45,24 @@ pub fn get_file_name_no_ext(filename : &str) -> Result<String,PathParseError>{
 ///     let filename = "app_data/10/aboba.docx";
 ///     assert_eq!(get_file_name(filename).unwrap(),"aboba.docx".to_string());
 /// ```
-pub fn get_file_ext(filename : &str) -> Result<String,PathParseError>{
+pub fn get_file_ext(filename : &str) -> Result<String>{
     let res = std::path::Path::new(filename)
         .extension()
         .unwrap_or(OsStr::new(""))
         .to_string_lossy().
         to_string();
-    if res.is_empty() {return Err(PathParseError)};
+    if res.is_empty() {return Err(Error::FileUtilsError);}
     Ok(res)
 }
 
-pub fn get_file_type(filename : &str) -> Result<String,PathParseError>{
+pub fn get_file_type(filename : &str) -> Result<String>{
     let ext = get_file_ext(filename)?;
 
     if config::EXT_DOCUMENT.contains(&ext.as_str()){Ok("word".to_string())}
     else if config::EXT_PRESENTATION.contains(&ext.as_str()){Ok("slide".to_string())}
     else if config::EXT_SPREADSHEET.contains(&ext.as_str()) {Ok("cell".to_string())}
     else{
-        Err(PathParseError)
+        Err(Error::FileUtilsError)
     }
 }
 
@@ -87,7 +78,7 @@ mod tests{
         let name = "/aboba.docx";
         assert_eq!(get_file_name(filename).unwrap(),"aboba.docx".to_owned());
         assert_eq!(get_file_name(filename2).unwrap(),"aboba1.docx".to_owned());
-        assert_eq!(get_file_name(wrong2),Err(PathParseError));
+        assert_eq!(get_file_name(wrong2),Err(Error::FileUtilsError));
         assert_eq!(get_file_name(name).unwrap(),"aboba.docx".to_string())
     }
 
@@ -97,7 +88,7 @@ mod tests{
         let c = "a.";
         assert_eq!(get_file_name_no_ext(a).unwrap(),"aboba".to_string());
         assert_eq!(get_file_name_no_ext(b).unwrap(),"aboba.docx".to_string());
-        assert_eq!(get_file_name_no_ext(c),Err(PathParseError));
+        assert_eq!(get_file_name_no_ext(c),Err(Error::FileUtilsError));
     }
 
     fn test_get_file_ext(){
@@ -107,7 +98,7 @@ mod tests{
 
         assert_eq!(get_file_ext(a).unwrap(),"docx".to_string());
         assert_eq!(get_file_name_no_ext(b).unwrap(),"rtf".to_string());
-        assert_eq!(get_file_name_no_ext(c),Err(PathParseError));
+        assert_eq!(get_file_name_no_ext(c),Err(Error::FileUtilsError));
     }
 
     fn test_file_type(){

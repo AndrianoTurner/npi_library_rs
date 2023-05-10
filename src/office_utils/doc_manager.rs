@@ -3,7 +3,7 @@ use std::{collections::HashMap};
 use reqwest::StatusCode;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use std::path::Path;
-use super::file_utils::{self, PathParseError};
+use super::file_utils::{self};
 use crate::config::{
     DOC_SERV_VIEWED,
     DOC_SERV_EDITED,
@@ -14,6 +14,8 @@ use crate::config::{
     ROOT_FOLDER,
     DOC_SERV_API_URL
 };
+use crate::error::Error;
+    type Result<T> = std::result::Result<T,Error>;
     pub fn is_can_fill_forms(file_extension : &str) -> bool{
         DOC_SERV_FILLFORMS.contains(&file_extension)
     }
@@ -63,7 +65,10 @@ use crate::config::{
     ///     
     ///     // Если уже существует то вернет
     ///     name == "test (1).docx"
-    pub fn get_correct_name(filename : &str) -> Result<String,PathParseError>{ 
+    /// 
+    /// 
+    /// 
+    pub fn get_correct_name(filename : &str) -> Result<String>{ 
         let basename = file_utils::get_file_name_no_ext(filename)?;
         let ext = file_utils::get_file_ext(filename)?;
 
@@ -143,9 +148,9 @@ use crate::config::{
         
     }
 
-    pub async fn create_file_response(mut response : reqwest::Response, path : &str) -> Result<(),PathParseError>{
+    pub async fn create_file_response(mut response : reqwest::Response, path : &str) -> Result<()>{
         if response.status() != StatusCode::OK{
-            return Err(PathParseError);
+            return Err(Error::DocManagerError);
         }
         let mut file = tokio::fs::File::create(path).await.unwrap();
 
@@ -174,7 +179,7 @@ use crate::config::{
     }
 
     /// Создает файл из assets
-    pub async fn create_sample(filetype : &str, is_sample : bool, user_id : i32) -> Result<String,PathParseError>{
+    pub async fn create_sample(filetype : &str, is_sample : bool, user_id : i32) -> Result<String>{
         let ext = get_internal_extension(filetype);
         let mut sample_name = String::from("new");
         if is_sample{
@@ -211,19 +216,19 @@ use crate::config::{
         hash[..19].to_string()
     }
 
-    pub async fn get_js_scripts() -> Result<String,reqwest::Error>{
+    pub async fn get_js_scripts() -> Result<String>{
         use reqwest;
         let script = reqwest::get(format!("{}{}",get_server_url(),DOC_SERV_API_URL)).await?;
-        script.text().await
+        Ok(script.text().await?)
     }
 
-    pub async fn get_file_for_user(filename : &str, user_id : i32) -> Result<Vec<u8>,PathParseError>{
+    pub async fn get_file_for_user(filename : &str, user_id : i32) -> Result<Vec<u8>>{
         let storage = &get_storage_path(filename, user_id).await;
         let file = Path::new(&storage);
 
-        if !file.exists(){return Err(PathParseError)}
+        if !file.exists(){return Err(Error::DocManagerError)}
 
-        Ok(tokio::fs::read(file).await.map_err(|_| PathParseError).unwrap())
+        Ok(tokio::fs::read(file).await.map_err(|_| Error::DocManagerError).unwrap())
     }
     /// 
     pub fn generate_revision_id(expected : &str) -> String{
