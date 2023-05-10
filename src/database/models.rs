@@ -1,4 +1,4 @@
-use std::cell::Ref;
+#![allow(non_snake_case,unused)]
 
 use serde::{Serialize,Deserialize};
 use argon2::{
@@ -56,10 +56,7 @@ impl User{
         let argon = Argon2::default();
         debug!("PASSWORD: {}",self.password);
         let pass = PasswordHash::new(&self.password).unwrap();
-        match argon.verify_password(other_password.as_bytes(), &pass){
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        argon.verify_password(other_password.as_bytes(), &pass).is_ok()
     }
     // Данная штука нужна для имитации проверки пароля, если были введены неверные данные
     // чтобы исключить проверку на существует ли пользователь или нет

@@ -1,5 +1,4 @@
-
-
+#![allow(non_snake_case,unused,dead_code)]
 use actix_web::{
     get,
     post, HttpResponse,
@@ -9,10 +8,10 @@ use actix_multipart::{
     Multipart
 };
 use serde::{Serialize, Deserialize};
-use tokio::{fs, io::AsyncBufRead};
+use tokio::{fs};
 use tokio::io::AsyncWriteExt;
 use crate::{auth::AuthenticationToken, State};
-use futures_util::{TryStreamExt, FutureExt, StreamExt};
+use futures_util::{TryStreamExt};
 use crate::office_utils::models::{CallbackData};
 use crate::office_utils::doc_manager::*;
 #[post("/upload")]
@@ -37,13 +36,13 @@ pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : Aut
 
             if filetype.is_none() {continue;};
             let destination = get_storage_path(
-                &field.content_disposition().get_filename().unwrap(), 
+                field.content_disposition().get_filename().unwrap(), 
                 user.id
             ).await;
 
             let mut saved_file = fs::File::create(&destination).await.unwrap();
             while let Ok(Some(chunk)) = field.try_next().await{
-                let _ = saved_file.write_all(&chunk).await.unwrap();
+                saved_file.write_all(&chunk).await.unwrap();
             }
         }
         current_count +=1;
@@ -83,17 +82,13 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
         error : i32,
     }
     if data.status == 1{
-        match data.actions{
-            Some(actions) =>{
-                if actions[0]._type == 0{
-                    let user = &actions[0].userid;
-                }
-            },
-            None => () ,
+        if let Some(actions) = data.actions{
+            if actions[0]._type == 0{
+                let user = &actions[0].userid;
+            }
         }
     }
-    if data.status == 2{
-        if data.url.is_some(){
+    if data.status == 2 && data.url.is_some(){
             let url = data.url.unwrap();
             let resp = reqwest::get(&url).await?;
             let filename = get_correct_name(&url)?;
@@ -101,12 +96,12 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
             let stream = resp.bytes_stream()
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other,e));
             let mut stream_reader = StreamReader::new(stream);
-            let _ = create_file(&mut stream_reader, &path, false).await;
+            create_file(&mut stream_reader, &path, false).await;
             return Ok(HttpResponse::Ok().json(Response {error : 0}));
         }
+        Ok(HttpResponse::Ok().json(Response {error : 0}))
     }
-    Ok(HttpResponse::Ok().json(Response {error : 0}))
-}
+    
 
 #[get("/file/{filename}")]
 pub async fn get_file(state : web::Data<State>) -> HttpResponse{

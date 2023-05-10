@@ -1,3 +1,4 @@
+#![allow(non_snake_case,unused)]
 use serde::{Serialize,Deserialize};
 use crate::database::models::{User,Groups};
 #[derive(Debug,Serialize,Deserialize)]

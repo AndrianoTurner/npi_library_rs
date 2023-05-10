@@ -1,7 +1,7 @@
 
+#![allow(non_snake_case,unused)]
 
-
-use actix_web::{FromRequest, web::{self, Json}, HttpResponse, http::{self, header::HeaderValue}, error::ErrorUnauthorized, dev::HttpServiceFactory};
+use actix_web::{FromRequest, web::Json, error::ErrorUnauthorized,http};
 use chrono::{Utc, Duration};
 use serde::{Serialize,Deserialize};
 use jsonwebtoken::{
@@ -47,12 +47,11 @@ pub async fn encode_token(user_id : i32) -> String{
     let exp : usize = Utc::now().checked_add_signed(Duration::minutes(3)).unwrap().timestamp() as usize;
     let claims = Claims{
         sub : user_id,
-        exp : exp,
+        exp,
     };
 
-    let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(JWT_SECRET))
-        .unwrap();
-    token
+    encode(&Header::default(), &claims, &EncodingKey::from_secret(JWT_SECRET))
+        .unwrap()
 }
 
 /// Расшифровывает JWT Токен

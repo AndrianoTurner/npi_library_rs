@@ -1,5 +1,5 @@
 
-
+#![allow(non_snake_case,unused,dead_code)]
 pub fn get_history_dir(storage_path : &str) -> String{
     format!("{}-hist",storage_path)
 }
@@ -16,12 +16,10 @@ pub fn get_file_version(hist_dir : &str) -> i32{
 
     let mut count = 1;
 
-    for f in dir.read_dir().unwrap(){
-        if let Ok(entry) = f{
+    for entry in dir.read_dir().unwrap().flatten(){
             if entry.path().is_dir(){
-                count += 1;
-            }
-        }
+                count += 1; 
+            }   
     }
     count
 }
@@ -32,7 +30,7 @@ pub async fn get_next_version_dir(hist_dir : &str) -> String{
     let path = std::path::Path::new(&p);
 
     if !path.exists(){
-        tokio::fs::create_dir(path);
+        tokio::fs::create_dir(path).await.unwrap();
     }
 
     path.to_string_lossy().to_string()

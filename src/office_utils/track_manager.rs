@@ -1,3 +1,4 @@
+#![allow(non_snake_case,unused,dead_code)]
 use crate::office_utils::doc_manager;
 
 use super::models::{CallbackData};

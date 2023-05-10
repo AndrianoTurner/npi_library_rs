@@ -1,8 +1,7 @@
+#![allow(non_snake_case,unused,dead_code)]
 use std::ffi::OsStr;
 
 use crate::config;
-
-use super::doc_manager;
 
 #[derive(Debug,PartialEq)]
 pub struct PathParseError;
@@ -68,9 +67,9 @@ pub fn get_file_ext(filename : &str) -> Result<String,PathParseError>{
 pub fn get_file_type(filename : &str) -> Result<String,PathParseError>{
     let ext = get_file_ext(filename)?;
 
-    if config::EXT_DOCUMENT.contains(&ext.as_str()){return Ok("word".to_string());}
-    else if config::EXT_PRESENTATION.contains(&ext.as_str()){return Ok("slide".to_string());}
-    else if config::EXT_SPREADSHEET.contains(&ext.as_str()) {return Ok("cell".to_string());}
+    if config::EXT_DOCUMENT.contains(&ext.as_str()){Ok("word".to_string())}
+    else if config::EXT_PRESENTATION.contains(&ext.as_str()){Ok("slide".to_string())}
+    else if config::EXT_SPREADSHEET.contains(&ext.as_str()) {Ok("cell".to_string())}
     else{
         Err(PathParseError)
     }

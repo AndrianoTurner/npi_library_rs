@@ -1,5 +1,5 @@
-use std::{collections::HashMap, fmt::format};
-use futures_util::{StreamExt, stream::repeat_with};
+#![allow(non_snake_case,unused)]
+use std::{collections::HashMap};
 use reqwest::StatusCode;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use std::path::Path;
@@ -134,10 +134,10 @@ use crate::config::{
 
         if !history_dir.exists() && create{
             tokio::fs::File::create(history_dir).await;
-            return hist_path
+            hist_path
         }
         else {
-            return "".to_string()
+            "".to_string()
         }
 
         
@@ -150,7 +150,7 @@ use crate::config::{
         let mut file = tokio::fs::File::create(path).await.unwrap();
 
         while let Some(chunk) = response.chunk().await.unwrap(){
-            file.write_all(&chunk);
+            file.write_all(&chunk).await;
         }
         Ok(())
     }
@@ -169,7 +169,7 @@ use crate::config::{
         let mut out = File::create(path).await.unwrap();
         let mut buf  = [0u8;8192];
         while let Ok(b) = stream.read(&mut buf).await {
-            out.write_all(&buf);
+            out.write_all(&buf).await;
         }
     }
 

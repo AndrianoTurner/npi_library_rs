@@ -43,13 +43,13 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
 async fn register(register : web::Json<RegisterRequest>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
     let reg = register.into_inner();
     reg.validate()?;
-    if let Some(_) = state.database.get_user_by_email(&reg.email).await{
+    if state.database.get_user_by_email(&reg.email).await.is_some(){
         return Ok(HttpResponse::InternalServerError().json("Email is regestered!"))
     }
     let user = state.database.create_user(&reg.email,&reg.password).await;
     match user {
         Ok(()) => Ok(HttpResponse::Ok().json("Successfully registered!")),
-        Err(e) => Ok(HttpResponse::InternalServerError().json("RegistrationError")),
+        Err(_) => Ok(HttpResponse::InternalServerError().json("RegistrationError")),
     }
     
 }
@@ -57,8 +57,8 @@ async fn register(register : web::Json<RegisterRequest>, state : web::Data<State
 #[get("/delete/{user_id}")]
 async fn delete(user_id : web::Path<i32>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
     log::debug!("/delete/{}",user_id);
-    if let Some(_) = state.database.get_user_by_id(*user_id).await{
-        state.database.delete_user_id(*user_id).await;
+    if state.database.get_user_by_id(*user_id).await.is_some(){
+        state.database.delete_user_id(*user_id).await.unwrap();
         Ok(HttpResponse::Ok().json("User deleted!"))
     }
     else{

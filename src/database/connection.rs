@@ -1,4 +1,4 @@
-use chrono::prelude::*;
+#![allow(non_snake_case,unused,dead_code)]
 use dotenvy::dotenv;
 use super::models::{User, hash_password};
 use sqlx::postgres::{PgPoolOptions,PgPool};
@@ -47,9 +47,9 @@ impl Database{
 
 
         // TODO Блокировать поток, т.к. функция блокирующая
-        let password = hash_password(&password);
+        let password = hash_password(password);
         sqlx::query(query)
-            .bind(&email)
+            .bind(email)
             .bind(&password)
             .execute(&self.pool)
             .await?;

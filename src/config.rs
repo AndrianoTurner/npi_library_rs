@@ -1,3 +1,4 @@
+#![allow(non_snake_case,unused)]
 use std::collections::HashMap;
 
 use once_cell::sync::Lazy;

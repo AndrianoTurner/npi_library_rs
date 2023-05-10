@@ -1,3 +1,4 @@
+#![allow(non_snake_case,unused,dead_code)]
 use super::{file_utils::{self, PathParseError}, models::CallbackData};
 
 #[derive(Debug)]
