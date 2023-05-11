@@ -32,11 +32,12 @@ impl Database{
     /// 
     /// 
     /// На данный момент может **паниковать**
-    pub async fn get_all_users(&self) -> Vec<User>{
+    pub async fn get_all_users(&self) -> Option<Vec<User>>{
         let query = "SELECT * FROM user_table";
         sqlx::query_as( query)
         .fetch_all(&self.pool)
-        .await.unwrap()
+        .await
+        .ok()
     }
     
     /// Функция, создающая пользователя
