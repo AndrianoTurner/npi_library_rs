@@ -1,5 +1,7 @@
 #![allow(non_snake_case,unused)]
 use std::{collections::HashMap};
+use actix_web::http::header::{HeaderMap, self,HeaderValue};
+use actix_web::{HttpResponse, HttpResponseBuilder};
 use reqwest::StatusCode;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use std::path::Path;
@@ -239,6 +241,18 @@ use crate::error::Error;
         key[..19].to_string()
     }
 
+    pub async fn download(file_path : &str) -> Result<HttpResponse>{
+        let mut file = tokio::fs::File::open(&file_path).await.map_err(|_| crate::error::Error::DocManagerError)?;
+        let name = crate::office_utils::file_utils::get_file_name(&file_path)?;
+        let filesize = file.metadata().await.unwrap().len();
+        let mut headers = HeaderMap::new();
+        headers.append(header::CONTENT_LENGTH, HeaderValue::from_str(&filesize.to_string()).unwrap());
+        headers.append(header::CONTENT_DISPOSITION,HeaderValue::from_str(&format!("attachment;filename={}",name)).unwrap());
+
+        let mut buffer : Vec<u8> = Vec::with_capacity(81292);
+        let bytes = file.read_to_end(&mut buffer).await.unwrap();
+        Ok(HttpResponse::Ok().body(buffer))
+    }
 #[cfg(test)]
 
 mod tests{

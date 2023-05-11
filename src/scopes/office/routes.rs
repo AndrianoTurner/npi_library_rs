@@ -10,7 +10,7 @@ use actix_multipart::{
 use serde::{Serialize, Deserialize};
 use tokio::{fs};
 use tokio::io::AsyncWriteExt;
-use crate::{auth::AuthenticationToken, State};
+use crate::{auth::AuthenticationToken, State, office_utils::{file_utils, doc_manager}};
 use futures_util::{TryStreamExt};
 use crate::office_utils::models::{CallbackData};
 use crate::office_utils::doc_manager::*;
@@ -108,12 +108,25 @@ pub async fn get_file(state : web::Data<State>) -> HttpResponse{
     let bytes = get_file_for_user("test.docx", 8).await.unwrap();
     HttpResponse::Ok().content_type("application/octet-stream").body(bytes)
 }
+#[get("/download/{user_id}/{filename}")]
+pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpResponse>{
+    let path = path.into_inner();
+    let (user_id,filename) = {(path.0,path.1)};
+    let filename = file_utils::get_file_name(&filename)?;
+
+    let file_path = doc_manager::get_storage_path(&filename, user_id).await;
+
+    let response = doc_manager::download(&file_path).await?;
+
+    Ok(response)
 
 
+}
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
     cfg.service(load_js);
     cfg.service(get_file);
     cfg.service(track);
+    cfg.service(download);
 }
