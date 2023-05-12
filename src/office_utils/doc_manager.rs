@@ -5,6 +5,7 @@ use actix_web::{HttpResponse, HttpResponseBuilder};
 use reqwest::StatusCode;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 use std::path::Path;
+use std::path::PathBuf;
 use super::file_utils::{self};
 use crate::config::{
     DOC_SERV_VIEWED,
@@ -71,8 +72,9 @@ use crate::error::Error;
     /// 
     /// 
     pub fn get_correct_name(filename : &str) -> Result<String>{ 
-        let basename = file_utils::get_file_name_no_ext(filename)?;
-        let ext = file_utils::get_file_ext(filename)?;
+        let t_path = Path::new(filename);
+        let basename = file_utils::get_file_name_no_ext(t_path)?;
+        let ext = file_utils::get_file_ext(t_path)?;
 
         let mut name = format!("{basename}{ext}");
         let mut i = 1;
@@ -104,53 +106,46 @@ use crate::error::Error;
     /// Возвращает путь к папке пользователя
     /// 
     /// Если папки нет то создает
-    pub async fn get_root_folder(user_id : i32) -> String{
+    pub async fn get_root_folder(user_id : i32) -> PathBuf{
         let user_folder = format!("{}{}",ROOT_FOLDER,user_id);
         log::debug!("Folder {}", user_folder);
-        match std::path::Path::new(&user_folder).exists() {
-            true => user_folder,
+        let user_dir = Path::new(&user_folder);
+        match user_dir.exists() {
+            true => user_dir.to_path_buf(),
             false => {
                 tokio::fs::create_dir(&user_folder).await.unwrap();
-                user_folder
+                user_dir.to_path_buf()
             },
         }
     }
 
     /// Возвращает путь к конкретной версии файла
-    pub async fn get_history_path(filename : &str,file : &str, version : &str, user_id : i32) -> String{
+    pub async fn get_history_path(filename : &str,file : &str, version : &str, user_id : i32) -> PathBuf{
         let storage = get_root_folder(user_id).await;
-        format!("{}/{}-hist/{}/{}",storage,filename,version,file)
+        storage.join( format!("{}-hist/{}/{}",filename,version,file))
+       
     }
     /// Возвращает путь к данному файлу
-    pub async fn get_storage_path(filename : &str,user_id : i32) -> String{
+    pub async fn get_storage_path(filename : &str,user_id : i32) -> PathBuf{
         let user_folder = get_root_folder(user_id).await;
-        let destination = format!(
-            "{}/{}",
-            user_folder,
-            filename
-        );
-        destination
+        user_folder.join(filename)
     }
 
-    pub async fn get_forcesave_path(filename : &str,user_id : i32,create : bool) -> String{
+    pub async fn get_forcesave_path(filename : &str,user_id : i32,create : bool) -> Option<PathBuf>{
         let user_folder = get_root_folder(user_id).await;
-        let hist_path = format!("{}/{}-hist",user_folder,filename);
-        let history_dir = std::path::Path::new(
-            &hist_path
-        );
-
+        let history_dir = user_folder.join(format!("{filename}-hist"));
         if !history_dir.exists() && create{
-            tokio::fs::File::create(history_dir).await;
-            hist_path
+            tokio::fs::File::create(&history_dir).await;
+            Some(history_dir)
         }
         else {
-            "".to_string()
+            None
         }
 
         
     }
 
-    pub async fn create_file_response(mut response : reqwest::Response, path : &str) -> Result<()>{
+    pub async fn create_file_response(mut response : reqwest::Response, path : &Path) -> Result<()>{
         if response.status() != StatusCode::OK{
             return Err(Error::DocManagerError);
         }
@@ -162,12 +157,12 @@ use crate::error::Error;
         Ok(())
     }
 
-    pub async fn save_file_from_uri(uri : &str, path : &str){
+    pub async fn save_file_from_uri(uri : &str, path : &Path){
         let resp = reqwest::get(uri).await.unwrap();
         create_file_response(resp, path).await.unwrap();
     }
 
-    pub async fn create_file<T>(stream : &mut T,path : &str, meta : bool)
+    pub async fn create_file<T>(stream : &mut T,path : &Path, meta : bool)
         where 
         T : std::marker::Unpin  + AsyncRead + AsyncReadExt
     {
@@ -241,7 +236,7 @@ use crate::error::Error;
         key[..19].to_string()
     }
 
-    pub async fn download(file_path : &str) -> Result<HttpResponse>{
+    pub async fn download(file_path : &Path) -> Result<HttpResponse>{
         let mut file = tokio::fs::File::open(&file_path).await.map_err(|_| crate::error::Error::DocManagerError)?;
         let name = crate::office_utils::file_utils::get_file_name(&file_path)?;
         let filesize = file.metadata().await.unwrap().len();

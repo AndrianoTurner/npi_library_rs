@@ -30,7 +30,7 @@ pub async fn get_converter_uri(
         pub fileUrl : Option<String>,
     }
     use crate::config::{DOCUMENT_SERVER_URL,DOC_SERV_CONVERTER_URL};
-    let title = file_utils::get_file_name(doc_uri)?;
+    let title = file_utils::get_file_name(std::path::Path::new(doc_uri))?;
     let payload = ConverterPayload{
         _async : true,
         url : doc_uri.to_owned(),

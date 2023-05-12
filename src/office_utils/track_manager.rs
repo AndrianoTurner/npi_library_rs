@@ -12,7 +12,7 @@ pub async fn process_save(body : CallbackData,filename : &str, user_id : i32) ->
     let mut download = body.url.ok_or(Error::TrackError)?;
     let changesuri = body.changesurl.ok_or(Error::TrackError)?;
     let mut new_file_name = filename.to_string();
-    let cur_ext = file_utils::get_file_ext(filename)?;
+    let cur_ext = file_utils::get_file_ext(std::path::Path::new(filename))?;
     let filetype = body.filetype.ok_or(Error::TrackError)?;
     let download_ext = format!(".{}",filetype);
 
@@ -29,7 +29,7 @@ pub async fn process_save(body : CallbackData,filename : &str, user_id : i32) ->
                download = u
             }
             Err(e) => {
-                let f = format!("{}{}",file_utils::get_file_name_no_ext(filename)?,download_ext);
+                let f = format!("{}{}",file_utils::get_file_name_no_ext(std::path::Path::new(filename))?,download_ext);
                 new_file_name = doc_manager::get_correct_name(&f)?
             } ,
         }
