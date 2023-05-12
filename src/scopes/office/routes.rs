@@ -103,11 +103,7 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
     }
     
 
-#[get("/file/{filename}")]
-pub async fn get_file(state : web::Data<State>) -> HttpResponse{
-    let bytes = get_file_for_user("test.docx", 8).await.unwrap();
-    HttpResponse::Ok().content_type("application/octet-stream").body(bytes)
-}
+
 #[get("/download/{user_id}/{filename}")]
 pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpResponse>{
     let path = path.into_inner();
@@ -126,7 +122,6 @@ pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
     cfg.service(load_js);
-    cfg.service(get_file);
     cfg.service(track);
     cfg.service(download);
 }

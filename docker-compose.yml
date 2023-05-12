@@ -12,13 +12,12 @@ services:
       - ./postgres-data:/var/lib/postgresql/data
 
   documentserver:
-    image: onlyoffice/documentserver:latest
+    image: onlyoffice/documentserver:7.2
     restart: always
     environment:
       - JWT_ENABLED=false
-      - JWT_SECRET=my_jwt_secret
     expose:
-      - 8000
+      - 80
     ports:
       - 8000:80
     volumes:
