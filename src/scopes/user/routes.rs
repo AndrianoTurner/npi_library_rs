@@ -45,10 +45,9 @@ async fn login(login_info : web::Json<LoginRequest>, state: web::Data<State>) ->
 async fn register(register : web::Json<RegisterRequest>, state : web::Data<State>) -> actix_web::Result<HttpResponse>{
     let reg = register.into_inner().normalize();
     reg.validate()?;
-    match state.database.get_user_by_email(&reg.email).await{
-        Ok(_) => return Ok(HttpResponse::BadRequest().json("Email is registered")),
-        _ => ()
-    };
+    if state.database.get_user_by_email(&reg.email).await.is_ok(){
+        return Ok(HttpResponse::BadRequest().json("Email is registered"))
+    }
     let user = state.database.create_user(&reg.email,&reg.password).await;
     match user {
         Ok(()) => Ok(HttpResponse::Ok().json("Successfully registered!")),

@@ -147,7 +147,7 @@ use crate::error::Error;
 
     pub async fn create_file_response(mut response : reqwest::Response, path : &Path) -> Result<()>{
         if response.status() != StatusCode::OK{
-            return Err(Error::DocManagerError);
+            return Err(Error::DocManager);
         }
         let mut file = tokio::fs::File::create(path).await.unwrap();
 
@@ -223,9 +223,9 @@ use crate::error::Error;
         let storage = &get_storage_path(filename, user_id).await;
         let file = Path::new(&storage);
 
-        if !file.exists(){return Err(Error::DocManagerError)}
+        if !file.exists(){return Err(Error::DocManager)}
 
-        Ok(tokio::fs::read(file).await.map_err(|_| Error::DocManagerError).unwrap())
+        Ok(tokio::fs::read(file).await.map_err(|_| Error::DocManager).unwrap())
     }
     /// 
     pub fn generate_revision_id(expected : &str) -> String{
@@ -237,8 +237,8 @@ use crate::error::Error;
     }
 
     pub async fn download(file_path : &Path) -> Result<HttpResponse>{
-        let mut file = tokio::fs::File::open(&file_path).await.map_err(|_| crate::error::Error::DocManagerError)?;
-        let name = crate::office_utils::file_utils::get_file_name(&file_path)?;
+        let mut file = tokio::fs::File::open(&file_path).await.map_err(|_| crate::error::Error::DocManager)?;
+        let name = crate::office_utils::file_utils::get_file_name(file_path)?;
         let filesize = file.metadata().await.unwrap().len();
         let mut headers = HeaderMap::new();
         headers.append(header::CONTENT_LENGTH, HeaderValue::from_str(&filesize.to_string()).unwrap());

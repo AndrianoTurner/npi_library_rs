@@ -5,26 +5,26 @@ use actix_web::{ResponseError, HttpResponse};
 #[derive(thiserror::Error,Debug,PartialEq)]
 pub enum Error{
     #[error("Database error")]
-    DatabaseError,
+    Database,
     #[error("Converter error")]
-    ConverterError,
+    Converter,
     #[error("Track Manager error")]
-    TrackError,
+    Track,
     #[error("File Utils error")]
-    FileUtilsError,
+    FileUtils,
     #[error("Doc Manager Error")]
-    DocManagerError,
+    DocManager,
 }
 
 impl From<reqwest::Error> for Error{
     fn from(_: reqwest::Error) -> Self {
-        Self::ConverterError
+        Self::Converter
     }
 }
 
 impl From<sqlx::Error> for Error{
     fn from(_: sqlx::Error) -> Self {
-        Self::DatabaseError
+        Self::Database
     }
 }
 
@@ -32,11 +32,11 @@ impl From<sqlx::Error> for Error{
 impl ResponseError for Error{
     fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
         match self{
-            Error::ConverterError => HttpResponse::InternalServerError().json("Something went wrong converting"),
-            Error::DatabaseError => HttpResponse::InternalServerError().json("Something went wrong database"),
-            Error::TrackError => HttpResponse::InternalServerError().json("Something went wrong tracking"),
-            Error::DocManagerError => HttpResponse::InternalServerError().json("Something went wrong docmanager"),
-            Error::FileUtilsError => HttpResponse::InternalServerError().json("Something wrong fileutils")
+            Error::Converter => HttpResponse::InternalServerError().json("Something went wrong converting"),
+            Error::Database => HttpResponse::InternalServerError().json("Something went wrong database"),
+            Error::Track => HttpResponse::InternalServerError().json("Something went wrong tracking"),
+            Error::DocManager => HttpResponse::InternalServerError().json("Something went wrong docmanager"),
+            Error::FileUtils => HttpResponse::InternalServerError().json("Something wrong fileutils")
         }
         
     }

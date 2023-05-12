@@ -55,7 +55,7 @@ impl User{
     pub fn check_password(&self,other_password : &str) -> bool{
         let argon = Argon2::default();
         debug!("PASSWORD: {}",self.password);
-        if let Some(pass) = PasswordHash::new(&self.password).ok(){
+        if let Ok(pass) = PasswordHash::new(&self.password){
             return argon.verify_password(other_password.as_bytes(), &pass).is_ok();
         }
         false

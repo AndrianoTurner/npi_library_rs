@@ -108,7 +108,7 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
 pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpResponse>{
     let path = path.into_inner();
     let (user_id,filename) = {(path.0,path.1)};
-    let filename = file_utils::get_file_name(&std::path::Path::new(&filename))?;
+    let filename = file_utils::get_file_name(std::path::Path::new(&filename))?;
 
     let file_path = doc_manager::get_storage_path(&filename, user_id).await;
 

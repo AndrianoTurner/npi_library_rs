@@ -47,7 +47,7 @@ impl Database{
         let query = "INSERT INTO user_table (email,password) VALUES ($1,$2)";
 
         let pass = tokio::task::block_in_place(|| {
-            hash_password(&password)
+            hash_password(password)
         } );
         // TODO Блокировать поток, т.к. функция блокирующая
         
@@ -74,7 +74,7 @@ impl Database{
             .bind(email)
             .fetch_one(&self.pool)
             .await
-            .map_err(|_| crate::error::Error::DatabaseError)
+            .map_err(|_| crate::error::Error::Database)
     }
 
     pub async fn delete_user_id(&self, user_id : i32) -> MyResult<()>{

@@ -9,11 +9,11 @@ type Result<T> = std::result::Result<T,Error>;
 
 pub async fn process_save(body : CallbackData,filename : &str, user_id : i32) -> Result<()>{
     use super::service_converter;
-    let mut download = body.url.ok_or(Error::TrackError)?;
-    let changesuri = body.changesurl.ok_or(Error::TrackError)?;
+    let mut download = body.url.ok_or(Error::Track)?;
+    let changesuri = body.changesurl.ok_or(Error::Track)?;
     let mut new_file_name = filename.to_string();
     let cur_ext = file_utils::get_file_ext(std::path::Path::new(filename))?;
-    let filetype = body.filetype.ok_or(Error::TrackError)?;
+    let filetype = body.filetype.ok_or(Error::Track)?;
     let download_ext = format!(".{}",filetype);
 
     if cur_ext != download_ext{
@@ -36,7 +36,7 @@ pub async fn process_save(body : CallbackData,filename : &str, user_id : i32) ->
     }
     let path = doc_manager::get_storage_path(&new_file_name, user_id).await;
     let hist_dir = hist_manager::get_history_dir(&path);
-    if !std::path::Path::new(&hist_dir).exists(){
+    if !hist_dir.exists(){
         tokio::fs::create_dir(&hist_dir).await.unwrap();
     }
     let version_dir = hist_manager::get_next_version_dir(&hist_dir).await;
