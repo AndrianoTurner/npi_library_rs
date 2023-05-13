@@ -65,11 +65,6 @@ pub async fn create_new(req : HttpRequest, state : web::Data<State>,create_file_
     HttpResponse::Created().into()
 }
 
-#[get("/load-api.js")]
-pub async fn load_js(state : web::Data<State>) -> HttpResponse{
-    let js = get_js_scripts().await.unwrap();
-    HttpResponse::Ok().content_type(mime::APPLICATION_JAVASCRIPT_UTF_8).body(js)
-}
 #[post("/track")]
 pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> Result<HttpResponse, Box<dyn std::error::Error>>{
     use futures_util::stream::{TryStreamExt};
@@ -121,7 +116,6 @@ pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpR
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
-    cfg.service(load_js);
     cfg.service(track);
     cfg.service(download);
 }

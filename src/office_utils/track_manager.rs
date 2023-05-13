@@ -3,6 +3,7 @@ use crate::office_utils::{doc_manager, hist_manager};
 
 use super::models::{CallbackData};
 use super::file_utils::{self};
+use super::service_converter;
 use crate::error::Error;
 
 type Result<T> = std::result::Result<T,Error>;
@@ -46,8 +47,36 @@ pub async fn process_save(body : CallbackData,filename : &str, user_id : i32) ->
     doc_manager::save_file_from_uri(&download, &path);
     let changess_zip_path = hist_manager::get_changes_zip_path(&version_dir);
     doc_manager::save_file_from_uri(&changesuri, &changess_zip_path);
+    Ok(())
+}
 
+pub async fn process_force_save(body : CallbackData, filename : &str, user_id : i32) -> Result<()> {
+    if let None = body.url {
+        return Err(Error::Track);
+    }
+    if let None = body.filetype{
+        return Err(Error::Track);
+    }
+    let filetype = body.filetype.unwrap();
 
+    let mut download = body.url.unwrap();
 
+    let cur_ext = file_utils::get_file_ext(std::path::Path::new(filename))?;
+    let mut new_filename = false;
+
+    if (cur_ext != filetype ){
+        let new_uri = service_converter::get_converter_uri(
+            &download, 
+            &filetype, 
+            &cur_ext, 
+            &doc_manager::generate_revision_id(&download)).await;
+        match new_uri{
+            Ok(uri) => download = uri,
+            Err(_) => new_filename = true,
+        }
+    }
+    let is_submit_form = body.forcesavetype.unwrap() == 3;
+
+    
     Ok(())
 }

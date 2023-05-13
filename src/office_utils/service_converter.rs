@@ -42,7 +42,7 @@ pub async fn get_converter_uri(
         region : None,
     };
     let url_for_req = format!("{}{}",DOCUMENT_SERVER_URL,DOC_SERV_CONVERTER_URL);
-    let parsed = reqwest::Url::parse(&url_for_req).map_err(|_| Error::Converter)?;
+    let parsed = reqwest::Url::parse(&url_for_req).map_err(|e| Error::Converter(e.to_string()))?;
     let client = reqwest::Client::new();
     let resp = client.post(parsed)
         .json(&payload)
@@ -52,7 +52,7 @@ pub async fn get_converter_uri(
         .await?;
 
     if resp.error != 0{
-        return  Err(Error::Converter);
+        return  Err(Error::Converter("get_converter_uri error : expected resp.error to be 0".to_string()));
     }
     // Че тут делать ?
     Ok(resp.fileUrl.unwrap())

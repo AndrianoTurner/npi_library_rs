@@ -74,7 +74,7 @@ impl Database{
             .bind(email)
             .fetch_one(&self.pool)
             .await
-            .map_err(|_| crate::error::Error::Database)
+            .map_err(|e| crate::error::Error::Database(e.to_string()))
     }
 
     pub async fn delete_user_id(&self, user_id : i32) -> MyResult<()>{
