@@ -106,9 +106,9 @@ pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpR
     let filename = file_utils::get_file_name(std::path::Path::new(&filename))?;
 
     let file_path = doc_manager::get_storage_path(&filename, user_id).await;
-
+    log::debug!("download : file_path {:?}",file_path);
     let response = doc_manager::download(&file_path).await?;
-
+    log::debug!("download : response {:?}",response);
     Ok(response)
 
 

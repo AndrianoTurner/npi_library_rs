@@ -12,7 +12,7 @@ services:
       - ./postgres-data:/var/lib/postgresql/data
 
   documentserver:
-    image: onlyoffice/documentserver:7.2
+    image: onlyoffice/documentserver:7.1
     restart: always
     environment:
       - JWT_ENABLED=false

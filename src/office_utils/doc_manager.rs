@@ -128,7 +128,10 @@ use crate::error::Error;
     /// Возвращает путь к данному файлу
     pub async fn get_storage_path(filename : &str,user_id : i32) -> PathBuf{
         let user_folder = get_root_folder(user_id).await;
-        user_folder.join(filename)
+        log::debug!("get_storage_path user_folder : {:?}", user_folder);
+
+        log::debug!("get_storage_path filename : {:?}", filename);
+        PathBuf::from(format!("{}/{}",user_folder.to_string_lossy(),filename))
     }
 
     pub async fn get_forcesave_path(filename : &str,user_id : i32,create : bool) -> Option<PathBuf>{
