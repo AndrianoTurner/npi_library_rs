@@ -49,7 +49,7 @@ pub async fn process_save(body : &CallbackData,filename : &str, user_id : i32) -
     let prev = hist_manager::get_prev_file_path(&version_dir, &cur_ext);
     tokio::fs::rename(&path,&prev).await;
 
-    doc_manager::save_file_from_uri(&download, &path);
+    doc_manager::save_file_from_uri(&download, &path).await;
     let changess_zip_path = hist_manager::get_changes_zip_path(&version_dir);
     doc_manager::save_file_from_uri(&changesuri, &changess_zip_path);
     Ok(())

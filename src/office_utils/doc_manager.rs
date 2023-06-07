@@ -76,13 +76,14 @@ use crate::error::Error;
         let basename = file_utils::get_file_name_no_ext(t_path)?;
         let ext = file_utils::get_file_ext(t_path)?;
 
-        let mut name = format!("{basename}{ext}");
+        let mut name = format!("{basename}.{ext}");
         let mut i = 1;
 
         while std::path::Path::new(&name).exists() {
             name = format!("{basename}({i}){ext}");
             i +=1;
         }
+        log::debug!("get_correct_name: {name}");
         Ok(name)
     }
 
@@ -131,7 +132,8 @@ use crate::error::Error;
         log::debug!("get_storage_path user_folder : {:?}", user_folder);
 
         log::debug!("get_storage_path filename : {:?}", filename);
-        PathBuf::from(format!("{}/{}",user_folder.to_string_lossy(),filename))
+        //PathBuf::from(format!("{}/{}",user_folder.to_string_lossy(),filename))
+        user_folder.join(filename)
     }
 
     pub async fn get_forcesave_path(filename : &str,user_id : i32,create : bool) -> Option<PathBuf>{

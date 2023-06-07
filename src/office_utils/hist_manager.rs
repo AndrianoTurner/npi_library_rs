@@ -58,7 +58,7 @@ pub fn get_changes_history_path(ver_dir : &Path) -> PathBuf{
 }
 
 pub fn get_prev_file_path(ver_dir : &Path, ext : &str) -> PathBuf{
-    PathBuf::from(format!("{}/prev{}",ver_dir.display(),ext))
+    PathBuf::from(format!("{}/prev.{}",ver_dir.display(),ext))
 }
 
 pub fn get_key_path(ver_dir : &Path) -> PathBuf{
