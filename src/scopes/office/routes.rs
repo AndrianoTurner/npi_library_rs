@@ -95,7 +95,9 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
             let mut stream_reader = StreamReader::new(stream);
             create_file(&mut stream_reader, &path, false).await;
             */
-            track_manager::process_save(&data, &filename, 8);
+            log::debug!("/track process save called!");
+            track_manager::process_save(&data, &filename, 8).await?;
+
         }
     if data.status == 6 || data.status == 7{
         track_manager::process_force_save(data, &filename, 8);

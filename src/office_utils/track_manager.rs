@@ -31,15 +31,16 @@ pub async fn process_save(body : &CallbackData,filename : &str, user_id : i32) -
 
         match new_uri {
             Ok(u) => {
-               download = u
-            }
+               download = u;
+            },
             Err(e) => {
                 let f = format!("{}{}",file_utils::get_file_name_no_ext(std::path::Path::new(filename))?,download_ext);
-                new_file_name = doc_manager::get_correct_name(&f)?
+                new_file_name = doc_manager::get_correct_name(&f)?;
             } ,
-        }
+        };
     }
     let path = doc_manager::get_storage_path(&new_file_name, user_id).await;
+    log::debug!("process save path: {:?}",path);
     let hist_dir = hist_manager::get_history_dir(&path);
     if !hist_dir.exists(){
         tokio::fs::create_dir(&hist_dir).await.unwrap();
