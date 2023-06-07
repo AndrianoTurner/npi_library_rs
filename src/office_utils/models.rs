@@ -96,7 +96,7 @@ pub struct Config{
     pub document : Option<Document>,
     pub editorConfig : Option<Editor>,
 }
-#[derive(Deserialize,Serialize,Debug)]
+#[derive(Deserialize,Serialize,Debug,Clone)]
 pub struct ActionObject{
     #[serde(rename = "type")]
     pub _type : i32,
@@ -107,7 +107,7 @@ pub struct ChangesObject{
     pub changes : String,
     pub serverVersion : String,
 }
-#[derive(Debug,Deserialize,Serialize)]
+#[derive(Debug,Deserialize,Serialize,Clone)]
 pub struct CallbackData{
     pub actions : Option<Vec<ActionObject>>,
     pub changesurl : Option<String>,

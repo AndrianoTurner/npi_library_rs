@@ -10,7 +10,7 @@ use actix_multipart::{
 use serde::{Serialize, Deserialize};
 use tokio::{fs};
 use tokio::io::AsyncWriteExt;
-use crate::{auth::AuthenticationToken, State, office_utils::{file_utils, doc_manager}};
+use crate::{auth::AuthenticationToken, State, office_utils::{file_utils, doc_manager, track_manager}};
 use futures_util::{TryStreamExt};
 use crate::office_utils::models::{CallbackData};
 use crate::office_utils::doc_manager::*;
@@ -76,15 +76,17 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
     struct Response{
         error : i32,
     }
+    let filename = file_utils::get_file_name(&std::path::PathBuf::from("aboba.docx")).unwrap();
     if data.status == 1{
-        if let Some(actions) = data.actions{
+        if let Some(actions) = &data.actions{
             if actions[0]._type == 0{
                 let user = &actions[0].userid;
+                track_manager::command_request("forcesave", &data.key, None).await
             }
         }
     }
-    if data.status == 2 && data.url.is_some(){
-            let url = data.url.unwrap();
+    if data.status == 2 || data.status == 3 && data.url.is_some(){
+           /*  let url = data.url.unwrap();
             let resp = reqwest::get(&url).await?;
             let filename = get_correct_name(&url)?;
             let path = get_storage_path(&filename,8).await;
@@ -92,10 +94,15 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other,e));
             let mut stream_reader = StreamReader::new(stream);
             create_file(&mut stream_reader, &path, false).await;
-            return Ok(HttpResponse::Ok().json(Response {error : 0}));
+            */
+            track_manager::process_save(&data, &filename, 8);
         }
-        Ok(HttpResponse::Ok().json(Response {error : 0}))
+    if data.status == 6 || data.status == 7{
+        track_manager::process_force_save(data, &filename, 8);
     }
+        
+    Ok(HttpResponse::Ok().json(Response {error : 0}))
+}
     
 
 
