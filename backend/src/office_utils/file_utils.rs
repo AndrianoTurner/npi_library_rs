@@ -1,7 +1,9 @@
 #![allow(non_snake_case,unused,dead_code)]
 use std::ffi::OsStr;
 
-use crate::config;
+use tokio::fs::DirEntry;
+
+use crate::config::{self, ROOT_FOLDER};
 use crate::error::Error;
 use std::path::Path;
 type Result<T> = std::result::Result<T,Error>;
@@ -65,6 +67,27 @@ pub fn get_file_type(filename : &Path) -> Result<String>{
     else{
         Err(Error::FileUtils)
     }
+}
+
+pub async fn get_all_user_folders() -> Option<Vec<DirEntry>>{
+    let app_data = std::path::PathBuf::from(ROOT_FOLDER);
+
+    let mut read_dir = tokio::fs::read_dir(app_data).await.unwrap();
+    let mut result = Vec::with_capacity(10);
+    while let Ok(entry) = read_dir.next_entry().await{
+
+        if let Some(e) = entry{
+            log::debug!("UserFolders : {:?}",e);
+            result.push(e)
+        }
+    }
+    if result.len() != 0{
+        Some(result)
+    }
+    else{
+        None
+    }
+    
 }
 
 #[cfg(test)]

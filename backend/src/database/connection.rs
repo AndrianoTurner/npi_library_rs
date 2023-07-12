@@ -45,11 +45,10 @@ impl Database{
     pub async fn create_user(&self, email : &str, password : &str) -> MyResult<()>{
         log::debug!("{} {}",email,password);
         let query = "INSERT INTO user_table (email,password) VALUES ($1,$2)";
-
-        let pass = tokio::task::block_in_place(|| {
-            hash_password(password)
-        } );
-        // TODO Блокировать поток, т.к. функция блокирующая
+        let cloned_pass = password.to_string();
+        let pass = tokio::task::spawn_blocking(move || {
+            hash_password(&cloned_pass)
+        } ).await.unwrap();
         
         sqlx::query(query)
             .bind(email)

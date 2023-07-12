@@ -4,9 +4,6 @@
 	export let password = '';
 	export let registerResponse = {
 		status: '',
-		id: -1,
-		token: '',
-		email: '',
 		errorCode: null
 	};
 	function register() {
@@ -24,9 +21,6 @@
 				console.log(response);
 				registerResponse = {
 					status: response.data.status,
-					id: response.data.id,
-					token: response.data.token,
-					email: response.data.email,
 					errorCode: response.data.errorCode
 				};
 			});
@@ -45,5 +39,7 @@
 	{#if registerResponse.errorCode}
 		{registerResponse.status}
 	{/if}
+
+	{registerResponse.status}
 	<p><a href="/register">Не зарегистрированы?</a></p>
 </div>

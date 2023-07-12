@@ -69,41 +69,35 @@ async fn login(
 async fn register(
     register: web::Json<RegisterRequest>,
     state: web::Data<State>,
-) -> actix_web::Result<HttpResponse> {
+) -> HttpResponse {
     let reg = register.into_inner().normalize();
-    reg.validate()?;
+    
+    if let Err(_) = reg.validate(){
+        return HttpResponse::Ok().json(RegisterResponse{
+            errorCode : 4,
+            status : "Неверные данные!".to_string(),
+        });
+    }
+        
     if state.database.get_user_by_email(&reg.email).await.is_ok() {
-        return Ok(HttpResponse::Ok().json(RegisterResponse {
+        return HttpResponse::Ok().json(RegisterResponse {
             errorCode: 1,
             status: "Пользователь с такой электронной почтой уже существует!".into(),
-        }));
+        });
     }
     let user = state.database.create_user(&reg.email, &reg.password).await;
     match user {
-        Ok(()) => Ok(HttpResponse::Ok().json(RegisterResponse {
+        Ok(_) => HttpResponse::Ok().json(RegisterResponse {
             status: "Регистрация успешна!".into(),
             errorCode: 0,
-        })),
-        Err(_) => Ok(HttpResponse::Ok().json(RegisterResponse {
+        }),
+        Err(_) => HttpResponse::Ok().json(RegisterResponse {
             errorCode: 2,
             status: "Внутренняя ошибка!".into(),
-        })),
+        }),
     }
 }
 
-#[get("/delete/{user_id}")]
-async fn delete(
-    user_id: web::Path<i32>,
-    state: web::Data<State>,
-) -> actix_web::Result<HttpResponse> {
-    log::debug!("/delete/{}", user_id);
-    if state.database.get_user_by_id(*user_id).await.is_some() {
-        state.database.delete_user_id(*user_id).await.unwrap();
-        Ok(HttpResponse::Ok().json("User deleted!"))
-    } else {
-        Ok(HttpResponse::InternalServerError().json("User not found!"))
-    }
-}
 
 #[get("/protected")]
 async fn protected(token: AuthenticationToken) -> HttpResponse {
@@ -116,6 +110,5 @@ async fn protected(token: AuthenticationToken) -> HttpResponse {
 pub fn build_routes(cfg: &mut ServiceConfig) {
     cfg.service(login);
     cfg.service(register);
-    cfg.service(delete);
     cfg.service(protected);
 }

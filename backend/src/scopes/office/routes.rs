@@ -12,7 +12,7 @@ use tokio::{fs};
 use tokio::io::AsyncWriteExt;
 use crate::{auth::AuthenticationToken, State, office_utils::{file_utils, doc_manager, track_manager}};
 use futures_util::{TryStreamExt};
-use crate::office_utils::models::{CallbackData};
+use crate::office_utils::models::{CallbackData,Book};
 use crate::office_utils::doc_manager::*;
 #[post("/upload")]
 pub async fn upload(mut payload : Multipart,state : web::Data<State>, auth : AuthenticationToken, req: HttpRequest ) -> HttpResponse{
@@ -65,18 +65,21 @@ pub async fn create_new(req : HttpRequest, state : web::Data<State>,create_file_
     HttpResponse::Created().into()
 }
 
-#[post("/track")]
-pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> Result<HttpResponse, Box<dyn std::error::Error>>{
+#[post("/track/{filename}")]
+pub async fn track(data : web::Json<CallbackData>, 
+    state : web::Data<State>,
+    path : web::Path<String>) -> Result<HttpResponse, Box<dyn std::error::Error>>{
     use futures_util::stream::{TryStreamExt};
     use tokio_util::io::StreamReader;
     let data = data.into_inner();
+    let filename = path.into_inner();
     log::debug!("Status: {:?}",data);
 
     #[derive(Serialize)]
     struct Response{
         error : i32,
     }
-    let filename = file_utils::get_file_name(&std::path::PathBuf::from("aboba.docx")).unwrap();
+    let filename = file_utils::get_file_name(&std::path::PathBuf::from(&filename)).unwrap();
     if data.status == 1{
         if let Some(actions) = &data.actions{
             if actions[0]._type == 0{
@@ -112,10 +115,51 @@ pub async fn download(path : web::Path<(i32,String)>) -> actix_web::Result<HttpR
 
 
 }
+
+
+#[derive(serde::Deserialize,serde::Serialize,Clone,Debug)]
+struct BooksResponse{
+    books : Option<Vec<String>>
+}
+
+#[get("/books")]
+pub async fn get_all_books() -> HttpResponse{
+    let user_folders = file_utils::get_all_user_folders().await;
+    let mut result = Vec::with_capacity(10);
+    if let Some(user_folders) = user_folders{
+
+        for folder in user_folders{
+            if folder.path().is_dir(){
+                let folder_name = folder.file_name();
+                let folder_name = folder_name.to_str().unwrap().to_string();
+                let id : i32 = folder_name.parse().unwrap();
+                let read_dir = tokio::fs::read_dir(folder.path()).await;
+                if let Ok(mut read_dir) = read_dir{
+                    while let Some(file) = read_dir.next_entry().await.unwrap(){
+                        if file.path().is_file(){
+                            let book = Book::new(id,file.file_name().to_str().unwrap());
+                            let link = book.construct_link();
+                            result.push(link);
+                        }
+                    }
+                }
+            }
+        }
+        HttpResponse::Ok().json(BooksResponse{books : Some(result)})
+    }
+
+    else{
+        HttpResponse::Ok().json(BooksResponse{ books : None})
+    }
+
+    
+}
+
 pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(upload);
     cfg.service(create_new);
     cfg.service(track);
     cfg.service(download);
+    cfg.service(get_all_books);
 }
 

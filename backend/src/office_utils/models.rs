@@ -119,3 +119,18 @@ pub struct CallbackData{
     pub userdata : Option<String>,
     pub users : Option<Vec<String>>,
 }
+#[derive(Debug,Deserialize,Serialize,Clone)]
+pub struct Book{
+    owner_id : i32,
+    filename : String,
+}
+
+impl Book{
+    pub fn new(owner_id : i32,filename : &str) -> Self{
+        Self {owner_id,filename : filename.to_string()}
+    }
+
+    pub fn construct_link(&self) -> String{
+        format!("download/{}/{}",self.owner_id,self.filename)
+    }
+}
