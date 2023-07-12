@@ -1,5 +1,7 @@
 #![allow(non_snake_case,unused)]
 
+use std::str::FromStr;
+
 use serde::{Serialize,Deserialize};
 use argon2::{
     password_hash::{
@@ -8,47 +10,51 @@ use argon2::{
     Argon2
 };
 use log::debug;
-use sqlx::FromRow;
+use sqlx::{FromRow, Row};
 
 use crate::office_utils::models::Document;
 const SALT : &str = "YWJvYmExMjM";
-#[derive(Serialize,Deserialize,Debug,PartialEq)]
-pub enum Groups{
-    None,
-    Student,
-    Teacher,
-    Admin,
+#[derive(Serialize,Deserialize,Debug,FromRow)]
+pub struct Role{
+    id : String,
+}
+#[derive(Serialize,Deserialize,Debug,FromRow)]
+pub struct Permission{
+    id : String,
+}
+#[derive(Serialize,Deserialize,Debug,FromRow)]
+pub struct RolePermission{
+    role_id : String,
+    permission_id : String,
+}
+#[derive(Serialize,Deserialize,Debug,FromRow)]
+pub struct UserRole{
+    user_id : i32,
+    role_id : String,
 }
 
-impl From<std::string::String> for Groups{
-    fn from(value: String) -> Self {
-        match value {
-            a if a == "None" => Self::None,
-            b if b == "Student" => Self::Student,
-            c if c == "Teacher" => Self::Teacher,
-            d if d == "Admin" => Self::Admin,
-            _ => Self::None
-        }
-    }
-}
 
-impl std::fmt::Display for Groups{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self{
-            Groups::None => write!(f,"None"),
-            Groups::Student => write!(f,"Student"),
-            Groups::Admin => write!(f,"Admin"),
-            Groups::Teacher => write!(f,"Teacher"),
-        }
-    }
-}
 
 #[derive(Deserialize,Serialize,Debug,PartialEq,sqlx::FromRow)]
 pub struct User{
     pub id : i32,
     pub email : String,
     pub password : String,
-    //pub group : String,
+}
+
+#[derive(Debug,Deserialize,Serialize,Clone,sqlx::FromRow)]
+pub struct Book{
+    id : i32,
+    owner_id : i32,
+    filepath : String,
+    filename : String,
+}
+
+
+impl Book{
+    pub fn construct_link(&self) -> String{
+        format!("download/{}/{}",self.owner_id,self.filepath)
+    }
 }
 
 impl User{
@@ -67,7 +73,7 @@ impl User{
         let u = User{
             id : 0, 
             email : "abob@mail.xyz".to_string(), 
-            password : "$argon2id$v=19$m=19456,t=2,p=1$YWJvYmExMjM$Kvd5Dp+uzp2Ycm07bLIB+nr7UOm0GPQ9Z2tV7Q58fHE".to_string()
+            password : "$argon2id$v=19$m=19456,t=2,p=1$YWJvYmExMjM$Kvd5Dp+uzp2Ycm07bLIB+nr7UOm0GPQ9Z2tV7Q58fHE".to_string(),
         };
         u.check_password("12345678910123");
     }
