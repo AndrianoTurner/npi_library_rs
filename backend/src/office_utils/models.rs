@@ -113,7 +113,6 @@ pub struct CallbackData{
     pub changesurl : Option<String>,
     pub filetype : Option<String>,
     pub forcesavetype : Option<i32>,
-    //pub history : Option<>,
     pub key : String,
     pub status : i32,
     pub url : Option<String>,

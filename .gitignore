@@ -1,4 +1,4 @@
-/target
-/postgres-data
-/app_data
-/persist
+target
+postgres-data
+app_data
+persist

@@ -86,18 +86,8 @@ pub async fn track(data : web::Json<CallbackData>, state : web::Data<State>) -> 
         }
     }
     if data.status == 2 || data.status == 3 && data.url.is_some(){
-           /*  let url = data.url.unwrap();
-            let resp = reqwest::get(&url).await?;
-            let filename = get_correct_name(&url)?;
-            let path = get_storage_path(&filename,8).await;
-            let stream = resp.bytes_stream()
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other,e));
-            let mut stream_reader = StreamReader::new(stream);
-            create_file(&mut stream_reader, &path, false).await;
-            */
             log::debug!("/track process save called!");
             track_manager::process_save(&data, &filename, 8).await?;
-
         }
     if data.status == 6 || data.status == 7{
         track_manager::process_force_save(data, &filename, 8);
@@ -128,3 +118,4 @@ pub fn build_routes(cfg : &mut ServiceConfig){
     cfg.service(track);
     cfg.service(download);
 }
+
