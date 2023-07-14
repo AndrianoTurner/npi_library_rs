@@ -6,3 +6,13 @@
 </nav>
 
 <slot />
+
+<style>
+	nav {
+	}
+
+	* {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 2rem;
+	}
+</style>
