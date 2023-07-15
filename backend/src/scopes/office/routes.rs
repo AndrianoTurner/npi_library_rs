@@ -1,6 +1,7 @@
 #![allow(non_snake_case, unused, dead_code)]
 use crate::office_utils::doc_manager::*;
 use crate::office_utils::models::CallbackData;
+use crate::scopes::user;
 use crate::{
     auth::AuthenticationToken,
     office_utils::{doc_manager, file_utils, track_manager},
@@ -84,16 +85,17 @@ pub async fn create_new(
     HttpResponse::Created().into()
 }
 
-#[post("/track/{filename}")]
+#[post("/track/{user_id}/{filename}")]
 pub async fn track(
     data: web::Json<CallbackData>,
     state: web::Data<State>,
-    path: web::Path<String>,
+    path: web::Path<(String, String)>,
 ) -> Result<HttpResponse, Box<dyn std::error::Error>> {
     use futures_util::stream::TryStreamExt;
     use tokio_util::io::StreamReader;
     let data = data.into_inner();
-    let filename = path.into_inner();
+    let (user_id, filename) = path.into_inner();
+    let user_id = user_id.parse::<i32>().unwrap_or(-1);
     log::debug!("Status: {:?}", data);
 
     #[derive(Serialize)]
@@ -111,10 +113,10 @@ pub async fn track(
     }
     if data.status == 2 || data.status == 3 && data.url.is_some() {
         log::debug!("/track process save called!");
-        track_manager::process_save(&data, &filename, 8).await?;
+        track_manager::process_save(&data, &filename, user_id).await?;
     }
     if data.status == 6 || data.status == 7 {
-        track_manager::process_force_save(data, &filename, 8);
+        track_manager::process_force_save(data, &filename, user_id);
     }
 
     Ok(HttpResponse::Ok().json(Response { error: 0 }))

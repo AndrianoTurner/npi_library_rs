@@ -1,5 +1,9 @@
 <script>
-	import Book from './Book.svelte';
+	import Book from '../../../components/Book.svelte';
+	import BookEdit from '../../../components/BookEdit.svelte';
+	/** @type {import('./$types').PageData} */
+	export let data;
+	console.log(data);
 </script>
 
-<slot />
+<BookEdit book={data.book} />
