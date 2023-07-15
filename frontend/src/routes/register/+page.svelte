@@ -2,11 +2,15 @@
 	import { axiosClient } from '../../hooks.client';
 	export let email = '';
 	export let password = '';
+	export let password2 = '';
 	export let registerResponse = {
 		status: '',
 		errorCode: null
 	};
 	function register() {
+		if (password != password2) {
+			return;
+		}
 		let data = {
 			email: email,
 			password: password
@@ -28,11 +32,13 @@
 </script>
 
 <div class="centered">
-	<h1>Вход</h1>
+	<h1>Регистрация</h1>
 
 	<input bind:value={email} placeholder="email" type="email" />
 	<p />
 	<input bind:value={password} placeholder="password" type="password" />
+	<p />
+	<input bind:value={password2} placeholder="password" type="password" />
 	<p />
 	<button on:click={register}>Зарегистрироваться</button>
 	<p />

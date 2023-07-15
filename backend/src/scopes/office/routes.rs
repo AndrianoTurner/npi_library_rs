@@ -1,4 +1,6 @@
 #![allow(non_snake_case, unused, dead_code)]
+use crate::database::connection::Database;
+use crate::database::models::BookResponse;
 use crate::office_utils::doc_manager::*;
 use crate::office_utils::models::CallbackData;
 use crate::scopes::user;
@@ -19,15 +21,32 @@ use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
+
+#[derive(Serialize, Deserialize)]
+pub struct CreateFileInfo {
+    file_type: String,
+    sample: bool,
+    title: String,
+    discipline: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UploadFileInfo {
+    title: String,
+    discipline: String,
+}
+
 #[post("/upload")]
 pub async fn upload(
     mut payload: Multipart,
     state: web::Data<State>,
     auth: AuthenticationToken,
+    info: web::Json<UploadFileInfo>,
     req: HttpRequest,
 ) -> HttpResponse {
     let max_file_size = 10_000;
     let max_file_count = 1;
+    let info = info.into_inner();
     let content_length = match req.headers().get(CONTENT_LENGTH) {
         Some(hv) => hv.to_str().unwrap_or("0").parse().unwrap(),
         None => 0,
@@ -57,15 +76,19 @@ pub async fn upload(
             while let Ok(Some(chunk)) = field.try_next().await {
                 saved_file.write_all(&chunk).await.unwrap();
             }
+            state
+                .database
+                .save_book(
+                    &destination.to_str().unwrap(),
+                    auth.id,
+                    &info.title,
+                    &info.discipline,
+                )
+                .await;
         }
         current_count += 1;
     }
     HttpResponse::Ok().into()
-}
-#[derive(Serialize, Deserialize)]
-pub struct CreateFileInfo {
-    file_type: String,
-    sample: bool,
 }
 
 #[get("/create")]
@@ -81,7 +104,11 @@ pub async fn create_new(
     }
     let filetype = info.file_type;
     let sample = info.sample;
-    create_sample(&filetype, sample, auth.id).await;
+    let filename = create_sample(&filetype, sample, auth.id).await.unwrap();
+    state
+        .database
+        .save_book(&filename, auth.id, &info.title, &info.discipline)
+        .await;
     HttpResponse::Created().into()
 }
 
@@ -135,9 +162,20 @@ pub async fn download(path: web::Path<(i32, String)>) -> actix_web::Result<HttpR
     Ok(response)
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct BooksResponse {
-    books: Option<Vec<String>>,
+    books: Vec<BookResponse>,
+}
+
+#[get("books/")]
+pub async fn get_books(data: web::Data<State>) -> HttpResponse {
+    let books = data.database.get_all_books().await;
+    HttpResponse::Ok().json(BooksResponse {
+        books: books
+            .iter()
+            .map(|b| BookResponse::from(b))
+            .collect::<Vec<BookResponse>>(),
+    })
 }
 
 pub fn build_routes(cfg: &mut ServiceConfig) {

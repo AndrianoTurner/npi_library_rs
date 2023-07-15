@@ -2,6 +2,9 @@
 CREATE TABLE user_table (
     id serial primary key,
     email varchar(255) NOT NULL UNIQUE,
+    first_name varchar,
+    second_name varchar,
+    last_name varchar,
     password varchar(255) NOT NULL
 );
 
@@ -23,6 +26,14 @@ CREATE TABLE user_roles(
     role_id varchar(255) NOT NULL,
     user_id serial NOT NULL,
     PRIMARY KEY (role_id,user_id)
+);
+
+CREATE TABLE books(
+    id serial primary key,
+    owner_id serial,
+    title varchar,
+    discipline varchar,
+    filepath varchar
 );
 
 INSERT INTO roles (id) VALUES ('none'), ('student'), ('administrator'), ('teacher');

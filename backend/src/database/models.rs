@@ -12,7 +12,7 @@ use argon2::{
 use log::debug;
 use sqlx::{FromRow, Row};
 
-use crate::office_utils::models::Document;
+use crate::office_utils::{models::Document, self};
 const SALT : &str = "YWJvYmExMjM";
 #[derive(Serialize,Deserialize,Debug,FromRow)]
 pub struct Role{
@@ -53,31 +53,47 @@ pub struct Book{
     discipline : String,
     owner_id : i32,
     filepath : String,
-    filename : String,
 }
 #[derive(Debug,Deserialize,Serialize,Clone)]
 pub struct BookResponse{
-    book_id : i32,
+    id : i32,
     title : String,
+    owner_id : i32,
     discipline : String,
-    url : String
+    callbackUrl : String,
+    downloadUrl : String,
+    filename : String,
+    filetype : String,
+    documentType : String,
 }
 
 impl From<&Book> for BookResponse{
     fn from(value: &Book) -> Self {
+    
         Self{
-            book_id : value.id,
+            id : value.id,
             title : value.title.to_owned(),
+            owner_id : value.owner_id,
             discipline : value.discipline.to_owned(),
-            url : value.construct_link(),
+            downloadUrl : value.construct_download_link(),
+            callbackUrl : value.construct_callback_link(),
+            filetype : office_utils::file_utils::get_file_ext(&std::path::PathBuf::from(&value.filepath)).unwrap(),
+            filename : office_utils::file_utils::get_file_name(&std::path::PathBuf::from(&value.filepath)).unwrap(),
+            documentType : office_utils::file_utils::get_file_type(&std::path::PathBuf::from(&value.filepath)).unwrap()
         }
     }
 }
 
 
 impl Book{
-    pub fn construct_link(&self) -> String{
-        format!("download/{}/{}",self.owner_id,self.filepath)
+    pub fn construct_download_link(&self) -> String{
+        let filename = office_utils::file_utils::get_file_name(&std::path::PathBuf::from(&self.filepath)).unwrap();
+        format!("download/{}/{}",self.owner_id,filename)
+    }
+
+    pub fn construct_callback_link(&self) -> String{
+        let filename = office_utils::file_utils::get_file_name(&std::path::PathBuf::from(&self.filepath)).unwrap();
+        format!("track/{}/{}",self.owner_id,filename)
     }
 }
 

@@ -1,5 +1,6 @@
 <script>
 	import { axiosClient } from '../../hooks.client';
+	import { token } from '../../stores/token_store';
 	export let email = '';
 	export let password = '';
 	export let loginResponse = {
@@ -21,7 +22,6 @@
 				}
 			})
 			.then(function (response) {
-				console.log(response);
 				loginResponse = {
 					status: response.data.status,
 					id: response.data.id,
@@ -29,6 +29,7 @@
 					email: response.data.email,
 					errorCode: response.data.errorCode
 				};
+				token.set(loginResponse.token);
 			});
 	}
 </script>
