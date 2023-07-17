@@ -24,17 +24,24 @@ create TABLE role_permissions(
 
 CREATE TABLE user_roles(
     role_id varchar(255) NOT NULL,
-    user_id serial NOT NULL,
+    user_id integer NOT NULL,
     PRIMARY KEY (role_id,user_id)
 );
 
 CREATE TABLE books(
     id serial primary key,
-    owner_id serial,
+    owner_id integer,
     title varchar,
     discipline varchar,
     filepath varchar
 );
+
+CREATE TABLE jwt_tokens(
+    id serial primary key,
+    user_id integer,
+    token varchar,
+    created timestamp
+)
 
 INSERT INTO roles (id) VALUES ('none'), ('student'), ('administrator'), ('teacher');
 INSERT INTO permissions (id) VALUES ('none'),('edit'),('view'),('full');

@@ -1,3 +1,3 @@
 import { writable } from "svelte/store";
 
-export let token = writable();
+export let auth_store = writable(null);

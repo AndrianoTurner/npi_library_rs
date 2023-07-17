@@ -24,8 +24,8 @@ use tokio::io::AsyncWriteExt;
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateFileInfo {
-    file_type: String,
-    sample: bool,
+    file_type: Option<String>,
+    sample: Option<bool>,
     title: String,
     discipline: String,
 }
@@ -79,7 +79,7 @@ pub async fn upload(
             state
                 .database
                 .save_book(
-                    &destination.to_str().unwrap(),
+                    destination.to_str().unwrap(),
                     auth.id,
                     &info.title,
                     &info.discipline,
@@ -99,11 +99,15 @@ pub async fn create_new(
     auth: AuthenticationToken,
 ) -> HttpResponse {
     let info = create_file_info.into_inner();
-    if info.file_type.is_empty() {
-        return HttpResponse::BadRequest().json("Wrong filetype!");
+    let mut filetype = "word".to_string();
+    let mut sample = false;
+    if let Some(ftype) = info.file_type {
+        ()
     }
-    let filetype = info.file_type;
-    let sample = info.sample;
+
+    if let Some(b) = info.sample {
+        sample = b
+    }
     let filename = create_sample(&filetype, sample, auth.id).await.unwrap();
     state
         .database
@@ -173,7 +177,7 @@ pub async fn get_books(data: web::Data<State>) -> HttpResponse {
     HttpResponse::Ok().json(BooksResponse {
         books: books
             .iter()
-            .map(|b| BookResponse::from(b))
+            .map(BookResponse::from)
             .collect::<Vec<BookResponse>>(),
     })
 }

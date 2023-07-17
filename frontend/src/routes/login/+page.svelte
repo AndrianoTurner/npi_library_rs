@@ -1,6 +1,6 @@
 <script>
 	import { axiosClient } from '../../hooks.client';
-	import { token } from '../../stores/token_store';
+	import { auth_store } from '../../stores/auth';
 	export let email = '';
 	export let password = '';
 	export let loginResponse = {
@@ -29,7 +29,12 @@
 					email: response.data.email,
 					errorCode: response.data.errorCode
 				};
-				token.set(loginResponse.token);
+				let auth_data = {
+					id: loginResponse.id,
+					token: loginResponse.token,
+					email: loginResponse.email
+				};
+				$auth_store = auth_data;
 			});
 	}
 </script>

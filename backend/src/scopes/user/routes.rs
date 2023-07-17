@@ -66,19 +66,16 @@ async fn login(
 }
 
 #[post("/register")]
-async fn register(
-    register: web::Json<RegisterRequest>,
-    state: web::Data<State>,
-) -> HttpResponse {
+async fn register(register: web::Json<RegisterRequest>, state: web::Data<State>) -> HttpResponse {
     let reg = register.into_inner().normalize();
-    
-    if let Err(_) = reg.validate(){
-        return HttpResponse::Ok().json(RegisterResponse{
-            errorCode : 4,
-            status : "Неверные данные!".to_string(),
+
+    if reg.validate().is_err() {
+        return HttpResponse::Ok().json(RegisterResponse {
+            errorCode: 4,
+            status: "Неверные данные!".to_string(),
         });
     }
-        
+
     if state.database.get_user_by_email(&reg.email).await.is_ok() {
         return HttpResponse::Ok().json(RegisterResponse {
             errorCode: 1,
@@ -97,7 +94,6 @@ async fn register(
         }),
     }
 }
-
 
 #[get("/protected")]
 async fn protected(token: AuthenticationToken) -> HttpResponse {

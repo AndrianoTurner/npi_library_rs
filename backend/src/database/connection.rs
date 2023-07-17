@@ -3,13 +3,23 @@ use crate::{office_utils::doc_manager::get_storage_path, scopes::user};
 
 use super::models::*;
 use dotenvy::dotenv;
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::{
+    postgres::{PgPool, PgPoolOptions},
+    FromRow,
+};
 
 type MyResult<T> = std::result::Result<T, crate::error::Error>;
 /// Структура, содержащая функции для взаимодействия с БД
 #[derive(Clone)]
 pub struct Database {
     pool: PgPool,
+}
+
+#[derive(Debug, FromRow)]
+struct JWTTable {
+    id: i32,
+    user_id: i32,
+    token: String,
 }
 
 impl Database {
@@ -154,6 +164,32 @@ impl Database {
             .bind(discipline)
             .bind(user_id)
             .bind(filepath.to_str().unwrap())
+            .execute(&self.pool)
+            .await;
+    }
+
+    pub async fn get_user_tokens(&self, user_id: i32) -> Vec<String> {
+        let query = "SELECT * FROM jwt_tokens WHERE user_id = $1";
+
+        let result: Vec<JWTTable> = sqlx::query_as(query)
+            .bind(user_id)
+            .fetch_all(&self.pool)
+            .await
+            .unwrap();
+
+        result
+            .iter()
+            .map(|e| e.token.to_owned())
+            .collect::<Vec<String>>()
+    }
+
+    pub async fn add_token(&self, user_id: i32, token: &str) {
+        let query = "INSERT into jwt_tokens (user_id,token,created) VALUES ($1,$2,$3)";
+
+        sqlx::query(query)
+            .bind(user_id)
+            .bind(token)
+            .bind(chrono::Local::now())
             .execute(&self.pool)
             .await;
     }
